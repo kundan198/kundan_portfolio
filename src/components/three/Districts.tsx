@@ -53,15 +53,23 @@ function DistrictNode({ d }: { d: District }) {
 
   // deterministic building layout around the district
   const buildings = useMemo(() => {
-    const arr: { x: number; z: number; w: number; depth: number; h: number }[] = [];
-    const n = 0;
+    const arr: { x: number; z: number; w: number; depth: number; h: number; glow: number }[] = [];
+    const dense = d.id === "downtown" || d.id === "campus" || d.id === "startup" || d.id === "lab";
+    const n = dense ? 12 : 0;
     for (let i = 0; i < n; i++) {
-      const ang = (i / n) * Math.PI * 2 + (cx + cz);
-      const r = 9 + ((i * 37) % 7);
+      const ang = (i / n) * Math.PI * 2 + (cx + cz) * 0.07;
+      const r = 10 + ((i * 37) % 10) + (dense && i % 3 === 0 ? 5 : 0);
       const x = Math.cos(ang) * r;
       const z = Math.sin(ang) * r;
-      const h = 4 + ((i * 53) % 10);
-      arr.push({ x, z, w: 2.4, depth: 2.4, h });
+      const h = dense ? 7 + ((i * 53) % 15) : 3.8 + ((i * 43) % 8);
+      arr.push({
+        x,
+        z,
+        w: 1.8 + ((i * 17) % 4) * 0.34,
+        depth: 1.8 + ((i * 29) % 4) * 0.34,
+        h,
+        glow: 0.16 + (i % 5) * 0.05,
+      });
     }
     return arr;
   }, [d.id, cx, cz]);
@@ -100,7 +108,7 @@ function DistrictNode({ d }: { d: District }) {
     // buildings rise + brighten with progress
     if (skyline.current) {
       skyline.current.children.forEach((c) => {
-        const target = 0.06 + alive * 0.94;
+        const target = 0.68 + alive * 0.32;
         c.scale.y += (target - c.scale.y) * Math.min(1, dt * 2);
       });
     }
@@ -143,11 +151,23 @@ function DistrictNode({ d }: { d: District }) {
         {buildings.map((b, i) => {
           const by = terrainHeight(cx + b.x, cz + b.z) - cy;
           return (
-            <mesh key={i} castShadow position={[b.x, by + b.h / 2, b.z]} scale={[1, 0.06, 1]}>
+            <mesh key={i} castShadow receiveShadow position={[b.x, by + b.h / 2, b.z]} scale={[1, 0.68, 1]}>
               <boxGeometry args={[b.w, b.h, b.depth]} />
-              <meshStandardMaterial color="#1b2436" emissive={color} emissiveIntensity={0.25} metalness={0.3} roughness={0.6} />
+              <meshStandardMaterial color="#182233" emissive={color} emissiveIntensity={b.glow} metalness={0.28} roughness={0.48} />
             </mesh>
           );
+        })}
+      </group>
+      <group>
+        {buildings.map((b, i) => {
+          const by = terrainHeight(cx + b.x, cz + b.z) - cy;
+          const rows = Math.max(2, Math.floor(b.h / 2.1));
+          return Array.from({ length: rows }, (_, r) => (
+            <mesh key={`${i}-${r}`} position={[b.x, by + 1.15 + r * 1.52, b.z + b.depth * 0.51 + 0.018]}>
+              <boxGeometry args={[b.w * 0.58, 0.14, 0.025]} />
+              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.34} roughness={0.28} />
+            </mesh>
+          ));
         })}
       </group>
 

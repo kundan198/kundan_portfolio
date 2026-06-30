@@ -19,9 +19,9 @@ const CAPSULE_RADIUS = 0.32;
 const BODY_CENTER_Y = CAPSULE_HALF + CAPSULE_RADIUS;
 const STEP_HEIGHT = 0.72;
 const GROUND_STICK = 0.08;
-const SPAWN_X = -72;
-const SPAWN_Z = -54;
-const SPAWN_HEADING = 0.55;
+const SPAWN_X = -46;
+const SPAWN_Z = -75;
+const SPAWN_HEADING = 0.68;
 
 export default function Hero() {
   const body = useRef<RapierRigidBody>(null);
@@ -43,7 +43,6 @@ export default function Hero() {
   const spine = useRef<THREE.Group>(null);
   const head = useRef<THREE.Group>(null);
   const hair = useRef<THREE.Group>(null);
-  const backpack = useRef<THREE.Group>(null);
   const eyeL = useRef<THREE.Mesh>(null);
   const eyeR = useRef<THREE.Mesh>(null);
   const lidL = useRef<THREE.Mesh>(null);
@@ -163,10 +162,6 @@ export default function Hero() {
         head.current.rotation.x = moving ? Math.cos(bobT.current) * 0.025 : Math.sin(bobT.current * 0.17) * 0.025;
       }
       if (hair.current) hair.current.rotation.x = -speed01 * 0.08 + Math.sin(bobT.current * 1.6) * 0.015;
-      if (backpack.current) {
-        backpack.current.rotation.x = Math.abs(stride) * 0.045 + speed01 * 0.035;
-        backpack.current.position.y = 0.76 - bob * 0.55;
-      }
       const swing = moving ? stride * (input.boost ? 0.86 : 0.62) : 0;
       if (legL.current) legL.current.rotation.x = swing;
       if (legR.current) legR.current.rotation.x = -swing;
@@ -281,31 +276,6 @@ export default function Hero() {
               <meshStandardMaterial color="#204f5f" roughness={0.84} />
             </mesh>
           ))}
-
-          <group ref={backpack} position={[0, 0.74, -0.31]}>
-            <mesh castShadow scale={[1, 1, 1]}>
-              <boxGeometry args={[0.44, 0.72, 0.2]} />
-              <meshStandardMaterial color="#111827" roughness={0.9} />
-            </mesh>
-            <mesh position={[0, 0.18, -0.11]} scale={[0.62, 0.34, 0.12]}>
-              <boxGeometry args={[0.42, 0.2, 0.05]} />
-              <meshStandardMaterial color="#263244" roughness={0.86} />
-            </mesh>
-            <mesh position={[0, -0.1, -0.135]} scale={[0.72, 0.46, 0.08]}>
-              <boxGeometry args={[0.38, 0.22, 0.04]} />
-              <meshStandardMaterial color="#0b1220" roughness={0.72} metalness={0.12} />
-            </mesh>
-            <mesh position={[0, -0.1, -0.158]} scale={[0.58, 0.34, 0.04]}>
-              <boxGeometry args={[0.34, 0.18, 0.018]} />
-              <meshStandardMaterial color="#1e293b" emissive="#0ea5e9" emissiveIntensity={0.08} roughness={0.55} />
-            </mesh>
-            {[-0.23, 0.23].map((x) => (
-              <mesh key={x} position={[x, -0.07, 0.21]} rotation={[0.1, 0, x > 0 ? -0.14 : 0.14]}>
-                <boxGeometry args={[0.055, 0.62, 0.035]} />
-                <meshStandardMaterial color="#0b1118" roughness={0.86} />
-              </mesh>
-            ))}
-          </group>
 
           <group ref={head} position={[0, 0.98, 0.03]}>
             <mesh castShadow scale={[1, 1, 1]}>

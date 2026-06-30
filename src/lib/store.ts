@@ -118,8 +118,8 @@ export const useGame = create<GameState>((set, get) => ({
   weather: "clear",
   setWeather: (w) => set({ weather: w }),
 
-  heroPos: [-72, 1, -54],
-  heroHeading: 0.55,
+  heroPos: [-46, 1, -75],
+  heroHeading: 0.68,
   setHero: (pos, heading) => set({ heroPos: pos, heroHeading: heading }),
 
   toast: null,
@@ -144,5 +144,7 @@ export const useGame = create<GameState>((set, get) => ({
       nearVehicle: false,
       timeOfDay: 0.32,
       weather: "clear",
+      heroPos: [-46, 1, -75],
+      heroHeading: 0.68,
     }),
 }));

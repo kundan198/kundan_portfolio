@@ -54,24 +54,24 @@ type CarpetPatch = {
   color: THREE.Color;
 };
 
-const ROCKS = 10;
-const ROADSIDE_GRASS = 0;
-const FIELD_GRASS = 0;
-const CARPET_PATCHES = 2600;
-const GROUND_COVER = 1400;
+const ROCKS = 70;
+const ROADSIDE_GRASS = 6500;
+const FIELD_GRASS = 15000;
+const CARPET_PATCHES = 4200;
+const GROUND_COVER = 4200;
 const STREAM_CELL = 32;
 const FOREST_COUNTS: Record<Species, number> = {
-  oak: 36,
-  pine: 58,
-  maple: 28,
-  birch: 24,
-  cedar: 28,
-  willow: 10,
-  palm: 18,
-  sapling: 0,
-  dead: 7,
-  giant: 7,
-  moss: 28,
+  oak: 64,
+  pine: 92,
+  maple: 48,
+  birch: 42,
+  cedar: 54,
+  willow: 18,
+  palm: 28,
+  sapling: 95,
+  dead: 8,
+  giant: 12,
+  moss: 58,
 };
 
 const speciesOrder = Object.keys(FOREST_COUNTS) as Species[];
@@ -106,7 +106,7 @@ function emptyCoverGroups(): Record<GroundCoverKind, GroundCover[]> {
 
 function streamRadius(kind: "tree" | "grass" | "rock") {
   const q = useGame.getState().graphicsQuality;
-  if (kind === "grass") return q === "low" ? 68 : q === "medium" ? 104 : q === "high" ? 138 : 175;
+  if (kind === "grass") return q === "low" ? 82 : q === "medium" ? 124 : q === "high" ? 156 : 190;
   if (kind === "rock") return q === "low" ? 72 : q === "medium" ? 100 : q === "high" ? 130 : 165;
   return q === "low" ? 78 : q === "medium" ? 110 : q === "high" ? 145 : 180;
 }
@@ -168,44 +168,44 @@ function pickGrassSpecies(x: number, z: number, road: number, rnd: () => number)
 function grassScale(species: GrassSpecies, rnd: () => number) {
   switch (species) {
     case "lawn":
-      return { h: 0.18 + rnd() * 0.25, wide: 0.18 + rnd() * 0.2, sat: 0.42, light: 0.32 };
+      return { h: 0.28 + rnd() * 0.42, wide: 0.34 + rnd() * 0.32, sat: 0.42, light: 0.32 };
     case "roadside":
-      return { h: 0.22 + rnd() * 0.4, wide: 0.18 + rnd() * 0.22, sat: 0.36, light: 0.34 };
+      return { h: 0.38 + rnd() * 0.72, wide: 0.32 + rnd() * 0.34, sat: 0.36, light: 0.34 };
     case "meadow":
-      return { h: 0.42 + rnd() * 0.9, wide: 0.2 + rnd() * 0.24, sat: 0.46, light: 0.28 };
+      return { h: 0.76 + rnd() * 1.28, wide: 0.34 + rnd() * 0.36, sat: 0.46, light: 0.28 };
     case "wild":
-      return { h: 0.62 + rnd() * 1.24, wide: 0.22 + rnd() * 0.28, sat: 0.48, light: 0.25 };
+      return { h: 0.95 + rnd() * 1.65, wide: 0.38 + rnd() * 0.42, sat: 0.48, light: 0.25 };
     case "forest":
-      return { h: 0.34 + rnd() * 0.76, wide: 0.18 + rnd() * 0.24, sat: 0.38, light: 0.2 };
+      return { h: 0.58 + rnd() * 1.08, wide: 0.32 + rnd() * 0.36, sat: 0.38, light: 0.2 };
     case "dry":
       return { h: 0.34 + rnd() * 0.72, wide: 0.18 + rnd() * 0.22, sat: 0.32, light: 0.31 };
     case "marsh":
-      return { h: 0.56 + rnd() * 1.22, wide: 0.2 + rnd() * 0.28, sat: 0.54, light: 0.25 };
+      return { h: 0.9 + rnd() * 1.7, wide: 0.36 + rnd() * 0.44, sat: 0.54, light: 0.25 };
     case "alpine":
       return { h: 0.22 + rnd() * 0.48, wide: 0.16 + rnd() * 0.18, sat: 0.28, light: 0.29 };
     case "flowering":
-      return { h: 0.32 + rnd() * 0.72, wide: 0.18 + rnd() * 0.23, sat: 0.5, light: 0.3 };
+      return { h: 0.62 + rnd() * 1.24, wide: 0.32 + rnd() * 0.38, sat: 0.5, light: 0.3 };
   }
 }
 
 function grassColor(species: GrassSpecies, rnd: () => number) {
   const c = new THREE.Color();
   const dry = species === "dry" || (species !== "marsh" && rnd() < 0.05);
-  if (dry) return c.setHSL(0.17 + rnd() * 0.05, 0.22 + rnd() * 0.12, 0.2 + rnd() * 0.08);
-  if (species === "marsh") return c.setHSL(0.3 + rnd() * 0.05, 0.42 + rnd() * 0.14, 0.16 + rnd() * 0.08);
-  if (species === "forest") return c.setHSL(0.29 + rnd() * 0.05, 0.3 + rnd() * 0.12, 0.14 + rnd() * 0.08);
+  if (dry) return c.setHSL(0.17 + rnd() * 0.05, 0.24 + rnd() * 0.12, 0.2 + rnd() * 0.08);
+  if (species === "marsh") return c.setHSL(0.29 + rnd() * 0.06, 0.48 + rnd() * 0.16, 0.15 + rnd() * 0.09);
+  if (species === "forest") return c.setHSL(0.28 + rnd() * 0.06, 0.36 + rnd() * 0.14, 0.13 + rnd() * 0.09);
   if (species === "alpine") return c.setHSL(0.22 + rnd() * 0.05, 0.24 + rnd() * 0.1, 0.18 + rnd() * 0.08);
-  if (species === "flowering") return c.setHSL(0.25 + rnd() * 0.07, 0.36 + rnd() * 0.14, 0.18 + rnd() * 0.09);
-  return c.setHSL(0.26 + rnd() * 0.06, 0.34 + rnd() * 0.14, 0.17 + rnd() * 0.1);
+  if (species === "flowering") return c.setHSL(0.24 + rnd() * 0.08, 0.44 + rnd() * 0.16, 0.18 + rnd() * 0.1);
+  return c.setHSL(0.24 + rnd() * 0.08, 0.42 + rnd() * 0.18, 0.16 + rnd() * 0.11);
 }
 
 function carpetColor(x: number, z: number, rnd: () => number) {
   const c = new THREE.Color();
   const water = nearWater(x, z);
   const mountain = Math.hypot(x, z) > 86;
-  if (water) return c.setHSL(0.31 + rnd() * 0.04, 0.34 + rnd() * 0.12, 0.17 + rnd() * 0.08);
-  if (mountain) return c.setHSL(0.2 + rnd() * 0.06, 0.22 + rnd() * 0.1, 0.19 + rnd() * 0.08);
-  return c.setHSL(0.25 + rnd() * 0.08, 0.28 + rnd() * 0.16, 0.17 + rnd() * 0.1);
+  if (water) return c.setHSL(0.31 + rnd() * 0.04, 0.42 + rnd() * 0.14, 0.16 + rnd() * 0.08);
+  if (mountain) return c.setHSL(0.2 + rnd() * 0.06, 0.28 + rnd() * 0.12, 0.18 + rnd() * 0.08);
+  return c.setHSL(0.24 + rnd() * 0.08, 0.38 + rnd() * 0.18, 0.15 + rnd() * 0.1);
 }
 
 function pickScale(species: Species, r: number) {
@@ -613,13 +613,13 @@ export default function Scenery() {
 
   const visibleRoadGrass = useMemo(() => {
     const [hx, , hz] = useGame.getState().heroPos;
-    const radius = useGame.getState().graphicsQuality === "low" ? 9 : 12;
+    const radius = streamRadius("grass") * 0.72;
     return roadGrass.filter((g) => nearStream(g.x, g.z, hx, hz, radius));
   }, [roadGrass, streamKey]);
 
   const visibleFieldGrass = useMemo(() => {
     const [hx, , hz] = useGame.getState().heroPos;
-    const radius = useGame.getState().graphicsQuality === "low" ? 9 : 12;
+    const radius = streamRadius("grass") * 0.72;
     return fieldGrass.filter((g) => nearStream(g.x, g.z, hx, hz, radius));
   }, [fieldGrass, streamKey]);
 
@@ -647,17 +647,19 @@ export default function Scenery() {
       const forest = district.id === "forest" && district.d < 62;
       let kind: GroundCoverKind;
       const roll = rnd();
-      if (forest) kind = roll < 0.42 ? "leaf" : roll < 0.68 ? "twig" : roll < 0.86 ? "mushroom" : "pebble";
-      else if (water) kind = roll < 0.4 ? "flower" : roll < 0.72 ? "pebble" : "leaf";
-      else kind = roll < 0.34 ? "flower" : roll < 0.62 ? "leaf" : roll < 0.82 ? "pebble" : "twig";
+      if (forest) kind = roll < 0.24 ? "fern" : roll < 0.42 ? "moss" : roll < 0.58 ? "leaf" : roll < 0.76 ? "twig" : roll < 0.91 ? "mushroom" : "pebble";
+      else if (water) kind = roll < 0.28 ? "fern" : roll < 0.58 ? "flower" : roll < 0.78 ? "moss" : roll < 0.91 ? "pebble" : "leaf";
+      else kind = roll < 0.3 ? "flower" : roll < 0.48 ? "fern" : roll < 0.62 ? "moss" : roll < 0.78 ? "leaf" : roll < 0.9 ? "pebble" : "twig";
       const color = new THREE.Color(
-        kind === "flower" ? ["#fef3c7", "#f9a8d4", "#bfdbfe", "#fde68a", "#ddd6fe"][Math.floor(rnd() * 5)] :
-        kind === "leaf" ? ["#7c4f25", "#a16207", "#6b5d2c"][Math.floor(rnd() * 3)] :
+        kind === "flower" ? ["#fef3c7", "#f9a8d4", "#bfdbfe", "#fde68a", "#ddd6fe", "#fb923c"][Math.floor(rnd() * 6)] :
+        kind === "fern" ? ["#2f6b35", "#3f7f3a", "#224f2d"][Math.floor(rnd() * 3)] :
+        kind === "moss" ? ["#244f24", "#315f2a", "#4d6f2c"][Math.floor(rnd() * 3)] :
+        kind === "leaf" ? ["#7c4f25", "#a16207", "#6b5d2c", "#445f26"][Math.floor(rnd() * 4)] :
         kind === "twig" ? "#4a2f1c" :
         kind === "mushroom" ? "#d6c3a3" :
         "#777267"
       );
-      arr.push({ kind, x, z, y: terrainHeight(x, z) + 0.035, s: 0.06 + rnd() * 0.22, rot: rnd() * Math.PI * 2, color });
+      arr.push({ kind, x, z, y: terrainHeight(x, z) + 0.035, s: 0.08 + rnd() * (kind === "fern" ? 0.34 : kind === "moss" ? 0.26 : 0.24), rot: rnd() * Math.PI * 2, color });
     }
     return arr;
   }, []);
@@ -969,6 +971,24 @@ export default function Scenery() {
         <circleGeometry args={[1, 9]} />
         <meshStandardMaterial vertexColors roughness={1} transparent opacity={0.72} depthWrite={false} />
       </instancedMesh>
+
+      {grassSpeciesOrder.map((species) => {
+        const count = visibleGrassBySpecies[species].length;
+        return (
+          <instancedMesh key={species} ref={(m) => { grassRefs.current[species] = m; }} args={[undefined, undefined, count]} castShadow receiveShadow frustumCulled>
+            <planeGeometry args={[1, 1, 1, 4]} />
+            <meshStandardMaterial
+              vertexColors
+              roughness={0.94}
+              side={THREE.DoubleSide}
+              transparent
+              opacity={species === "dry" ? 0.82 : 0.94}
+              alphaTest={0.08}
+              onBeforeCompile={onGrassCompile}
+            />
+          </instancedMesh>
+        );
+      })}
 
       {coverKindOrder.map((kind) => {
         const count = visibleCoverByKind[kind].length;
