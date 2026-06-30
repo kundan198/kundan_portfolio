@@ -28,9 +28,9 @@ export default function Terrain() {
         const grassDot = dot > 0.68 ? 1 : 0;
         const darkTuft = dot < -0.58 ? 1 : 0;
         const soilDot = dot < -0.9 ? 1 : 0;
-        data[i] = 82 + soft * 20 + fiber * 7 - grassDot * 22 - darkTuft * 10 + soilDot * 18;
-        data[i + 1] = 145 + soft * 48 + fiber * 20 + grassDot * 28 - soilDot * 8;
-        data[i + 2] = 58 + soft * 15 - grassDot * 16 - darkTuft * 12 - soilDot * 8;
+        data[i] = 104 + soft * 24 + fiber * 8 - grassDot * 16 - darkTuft * 5 + soilDot * 14;
+        data[i + 1] = 150 + soft * 50 + fiber * 18 + grassDot * 22 - soilDot * 4;
+        data[i + 2] = 76 + soft * 18 - grassDot * 9 - darkTuft * 6 - soilDot * 4;
       }
     }
     const texture = new THREE.DataTexture(data, size, size, THREE.RGBFormat);
@@ -46,11 +46,11 @@ export default function Terrain() {
     geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     const colors: number[] = [];
-    const cLow = new THREE.Color("#4d7e34");
-    const cGrass = new THREE.Color("#6fb246");
-    const cMoss = new THREE.Color("#315f2f");
-    const cDirt = new THREE.Color("#6a5b35");
-    const cRock = new THREE.Color("#6d745d");
+    const cLow = new THREE.Color("#79aa4f");
+    const cGrass = new THREE.Color("#a3d96a");
+    const cMoss = new THREE.Color("#6fa852");
+    const cDirt = new THREE.Color("#847447");
+    const cRock = new THREE.Color("#87906d");
     const cSnow = new THREE.Color("#dbe3e8");
     const cRoadShoulder = new THREE.Color("#62563e");
     for (let i = 0; i < pos.count; i++) {
@@ -65,7 +65,7 @@ export default function Terrain() {
       const slope = Math.abs(terrainHeight(x + 1.2, z) - terrainHeight(x - 1.2, z)) + Math.abs(terrainHeight(x, z + 1.2) - terrainHeight(x, z - 1.2));
 
       const lowToGrass = THREE.MathUtils.smoothstep(h, -0.4, 2.6);
-      const mossMask = THREE.MathUtils.clamp(0.18 + Math.max(0, broad) * 0.28 + (1 - lowToGrass) * 0.12 + Math.max(0, micro) * 0.06, 0, 0.46);
+      const mossMask = THREE.MathUtils.clamp(0.12 + Math.max(0, broad) * 0.2 + (1 - lowToGrass) * 0.08 + Math.max(0, micro) * 0.04, 0, 0.32);
       const dirtMask = THREE.MathUtils.clamp(Math.max(0, fine - 0.24) * 0.06 + Math.max(0, micro - 0.4) * 0.03, 0, 0.1);
       const rockMask = THREE.MathUtils.smoothstep(h + slope * 3.2, 14.0, 25.0);
       const snowMask = THREE.MathUtils.smoothstep(h + broad * 2.2, 18.0, 31.0);
@@ -79,7 +79,7 @@ export default function Terrain() {
         .lerp(cSnow, snowMask)
         .lerp(cRoadShoulder, roadMask * 0.82);
 
-      c.offsetHSL(broad * 0.026 + fine * 0.012, 0.02 + micro * 0.012, fine * 0.035 + micro * 0.016);
+      c.offsetHSL(broad * 0.02 + fine * 0.01, 0.025 + micro * 0.01, 0.055 + fine * 0.025 + micro * 0.014);
       colors.push(c.r, c.g, c.b);
     }
     geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));

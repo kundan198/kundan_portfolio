@@ -55,8 +55,8 @@ type CarpetPatch = {
 };
 
 const ROCKS = 70;
-const ROADSIDE_GRASS = 6500;
-const FIELD_GRASS = 15000;
+const ROADSIDE_GRASS = 65000;
+const FIELD_GRASS = 150000;
 const CARPET_PATCHES = 4200;
 const GROUND_COVER = 4200;
 const STREAM_CELL = 32;
@@ -190,22 +190,22 @@ function grassScale(species: GrassSpecies, rnd: () => number) {
 
 function grassColor(species: GrassSpecies, rnd: () => number) {
   const c = new THREE.Color();
-  const dry = species === "dry" || (species !== "marsh" && rnd() < 0.05);
-  if (dry) return c.setHSL(0.17 + rnd() * 0.05, 0.24 + rnd() * 0.12, 0.2 + rnd() * 0.08);
-  if (species === "marsh") return c.setHSL(0.29 + rnd() * 0.06, 0.48 + rnd() * 0.16, 0.15 + rnd() * 0.09);
-  if (species === "forest") return c.setHSL(0.28 + rnd() * 0.06, 0.36 + rnd() * 0.14, 0.13 + rnd() * 0.09);
-  if (species === "alpine") return c.setHSL(0.22 + rnd() * 0.05, 0.24 + rnd() * 0.1, 0.18 + rnd() * 0.08);
-  if (species === "flowering") return c.setHSL(0.24 + rnd() * 0.08, 0.44 + rnd() * 0.16, 0.18 + rnd() * 0.1);
-  return c.setHSL(0.24 + rnd() * 0.08, 0.42 + rnd() * 0.18, 0.16 + rnd() * 0.11);
+  const dry = species === "dry" || (species !== "marsh" && rnd() < 0.025);
+  if (dry) return c.setHSL(0.18 + rnd() * 0.05, 0.32 + rnd() * 0.12, 0.34 + rnd() * 0.1);
+  if (species === "marsh") return c.setHSL(0.3 + rnd() * 0.06, 0.56 + rnd() * 0.16, 0.34 + rnd() * 0.11);
+  if (species === "forest") return c.setHSL(0.29 + rnd() * 0.06, 0.46 + rnd() * 0.14, 0.29 + rnd() * 0.11);
+  if (species === "alpine") return c.setHSL(0.23 + rnd() * 0.05, 0.34 + rnd() * 0.1, 0.34 + rnd() * 0.09);
+  if (species === "flowering") return c.setHSL(0.25 + rnd() * 0.08, 0.56 + rnd() * 0.16, 0.34 + rnd() * 0.12);
+  return c.setHSL(0.25 + rnd() * 0.08, 0.54 + rnd() * 0.18, 0.32 + rnd() * 0.12);
 }
 
 function carpetColor(x: number, z: number, rnd: () => number) {
   const c = new THREE.Color();
   const water = nearWater(x, z);
   const mountain = Math.hypot(x, z) > 86;
-  if (water) return c.setHSL(0.31 + rnd() * 0.04, 0.42 + rnd() * 0.14, 0.16 + rnd() * 0.08);
-  if (mountain) return c.setHSL(0.2 + rnd() * 0.06, 0.28 + rnd() * 0.12, 0.18 + rnd() * 0.08);
-  return c.setHSL(0.24 + rnd() * 0.08, 0.38 + rnd() * 0.18, 0.15 + rnd() * 0.1);
+  if (water) return c.setHSL(0.31 + rnd() * 0.04, 0.5 + rnd() * 0.14, 0.3 + rnd() * 0.1);
+  if (mountain) return c.setHSL(0.21 + rnd() * 0.06, 0.36 + rnd() * 0.12, 0.32 + rnd() * 0.1);
+  return c.setHSL(0.25 + rnd() * 0.08, 0.48 + rnd() * 0.18, 0.3 + rnd() * 0.11);
 }
 
 function pickScale(species: Species, r: number) {
@@ -239,25 +239,25 @@ function foliageColor(species: Species, hue: number) {
   const color = new THREE.Color();
   switch (species) {
     case "pine":
-      return color.setHSL(0.31 + hue * 0.04, 0.46, 0.26 + hue * 0.08);
+      return color.setHSL(0.31 + hue * 0.04, 0.5, 0.38 + hue * 0.1);
     case "cedar":
-      return color.setHSL(0.36 + hue * 0.03, 0.38, 0.25 + hue * 0.08);
+      return color.setHSL(0.36 + hue * 0.03, 0.44, 0.36 + hue * 0.1);
     case "maple":
-      return color.setHSL(0.2 + hue * 0.07, 0.42, 0.3 + hue * 0.08);
+      return color.setHSL(0.2 + hue * 0.07, 0.5, 0.4 + hue * 0.1);
     case "birch":
-      return color.setHSL(0.27 + hue * 0.06, 0.38, 0.31 + hue * 0.08);
+      return color.setHSL(0.27 + hue * 0.06, 0.46, 0.42 + hue * 0.1);
     case "willow":
-      return color.setHSL(0.25 + hue * 0.05, 0.42, 0.29 + hue * 0.08);
+      return color.setHSL(0.25 + hue * 0.05, 0.52, 0.4 + hue * 0.1);
     case "palm":
-      return color.setHSL(0.31 + hue * 0.04, 0.5, 0.32 + hue * 0.08);
+      return color.setHSL(0.31 + hue * 0.04, 0.58, 0.42 + hue * 0.1);
     case "sapling":
-      return color.setHSL(0.3 + hue * 0.04, 0.38, 0.28 + hue * 0.07);
+      return color.setHSL(0.3 + hue * 0.04, 0.48, 0.4 + hue * 0.1);
     case "moss":
-      return color.setHSL(0.27 + hue * 0.04, 0.34, 0.27 + hue * 0.07);
+      return color.setHSL(0.27 + hue * 0.04, 0.42, 0.38 + hue * 0.1);
     case "giant":
-      return color.setHSL(0.27 + hue * 0.05, 0.4, 0.27 + hue * 0.08);
+      return color.setHSL(0.27 + hue * 0.05, 0.48, 0.38 + hue * 0.1);
     default:
-      return color.setHSL(0.27 + hue * 0.06, 0.4, 0.29 + hue * 0.08);
+      return color.setHSL(0.27 + hue * 0.06, 0.5, 0.4 + hue * 0.1);
   }
 }
 
@@ -563,7 +563,7 @@ export default function Scenery() {
       const road = distanceToRoad(x, z);
       if (road < 1.6) continue;
       if (road > 34 && rnd() < 0.55) continue;
-      if (districts.some((d) => Math.hypot(x - d.position[0], z - d.position[1]) < 8)) continue;
+      if (districts.some((d) => Math.hypot(x - d.position[0], z - d.position[1]) < 5)) continue;
       const shoulder = road < 5;
       const species: GrassSpecies = shoulder ? "roadside" : rnd() < 0.22 ? "flowering" : "meadow";
       const scale = grassScale(species, rnd);
@@ -593,8 +593,8 @@ export default function Scenery() {
       const x = Math.cos(a) * r;
       const z = Math.sin(a) * r;
       const road = distanceToRoad(x, z);
-      if (road < 6.2 || roadFlatten(x, z) > 0.025) continue;
-      if (districts.some((d) => Math.hypot(x - d.position[0], z - d.position[1]) < 12)) continue;
+      if (road < 3.8 || roadFlatten(x, z) > 0.04) continue;
+      if (districts.some((d) => Math.hypot(x - d.position[0], z - d.position[1]) < 7)) continue;
       const species = pickGrassSpecies(x, z, road, rnd);
       const scale = grassScale(species, rnd);
       arr.push({
@@ -640,8 +640,8 @@ export default function Scenery() {
       const x = Math.cos(a) * r;
       const z = Math.sin(a) * r;
       const road = distanceToRoad(x, z);
-      if (road < 7 || roadFlatten(x, z) > 0.02) continue;
-      if (districts.some((d) => Math.hypot(x - d.position[0], z - d.position[1]) < 10)) continue;
+      if (road < 4.6 || roadFlatten(x, z) > 0.035) continue;
+      if (districts.some((d) => Math.hypot(x - d.position[0], z - d.position[1]) < 7)) continue;
       const district = districtInfluence(x, z);
       const water = nearWater(x, z);
       const forest = district.id === "forest" && district.d < 62;
