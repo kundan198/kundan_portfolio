@@ -1,0 +1,31 @@
+KUNDAN SRINIVAS SAKKURU
+Full Stack Engineer and AI Specialist
+
+Location: Tampa, FL
+Email: kundansrinivas377@gmail.com
+Phone: +1 813 568 7378
+LinkedIn: https://linkedin.com/in/kundan-srinivas-sakkuru
+GitHub: https://github.com/kundan198
+
+SUMMARY
+Full-stack software engineer specializing in production AI systems, cross-platform mobile apps, and scalable web platforms. Two-time hackathon award winner and published researcher with 8 papers.
+
+EDUCATION
+MS Computer Science, University of South Florida (Expected May 2026)
+BE Computer Science and Engineering, R.M.D Engineering College (CGPA 9.03/10, Gold Medal)
+
+CORE SKILLS
+Python, TypeScript, React, Flutter, FastAPI, Firebase, LangChain, RAG, PyTorch, TensorFlow, NLP, Computer Vision
+
+EXPERIENCE HIGHLIGHTS
+- Research Software Engineer, SHIELD Lab, USF
+  Built and shipped CogniX, a production neuroscience app used in live studies.
+- AI Intern, YoungMinds
+  Built end-to-end NLP and predictive ML pipelines.
+
+SELECTED PROJECTS
+- BayShield: Agentic AI disaster-response platform with parallel autonomous agents.
+- SignBridge: Real-time speech-to-sign and sign-to-speech AI communication platform.
+- CogniX: Production neurocognitive assessment app with real-time data pipelines.
+
+To request the full PDF resume, contact: kundansrinivas377@gmail.com
