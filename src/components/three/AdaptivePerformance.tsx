@@ -4,10 +4,11 @@ import { PerformanceMonitor } from "@react-three/drei";
 import { useGame, type GraphicsQuality } from "@/lib/store";
 
 // FPS safety net: if the frame rate drops for a sustained period, step the existing
-// graphicsQuality tier DOWN (which cascades to DPR, shadows, post-FX and streaming
-// radii). It never auto-raises — the manual quality selector stays the ceiling, so
-// this only ever rescues a struggling machine, never fights the user's choice.
+// graphicsQuality tier DOWN. Everyone gets Medium by default, and the auto-monitor is
+// floored at Medium — it may drop Ultra/High down to Medium but never below it, so the
+// world always looks its intended "medium" best. Users can still pick Low manually.
 const TIERS: GraphicsQuality[] = ["low", "medium", "high", "ultra"];
+const FLOOR = 1; // = "medium"
 
 export default function AdaptivePerformance() {
   return (
@@ -16,9 +17,9 @@ export default function AdaptivePerformance() {
       flipflops={3}
       onDecline={() => {
         const cur = TIERS.indexOf(useGame.getState().graphicsQuality);
-        if (cur > 0) useGame.getState().setGraphicsQuality(TIERS[cur - 1]);
+        if (cur > FLOOR) useGame.getState().setGraphicsQuality(TIERS[cur - 1]);
       }}
-      onFallback={() => useGame.getState().setGraphicsQuality("low")}
+      onFallback={() => useGame.getState().setGraphicsQuality("medium")}
     />
   );
 }

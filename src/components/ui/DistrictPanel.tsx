@@ -9,9 +9,9 @@ export default function DistrictPanel({ district }: { district: District }) {
   const collected = progress?.orbsCollected ?? 0;
 
   return (
-    <div className="pointer-events-none fixed bottom-4 left-1/2 z-40 w-[min(94vw,560px)] -translate-x-1/2 md:left-4 md:translate-x-0">
+    <div className="pointer-events-none fixed left-1/2 z-30 w-[min(92vw,560px)] -translate-x-1/2 bottom-[calc(12.5rem+env(safe-area-inset-bottom))] md:bottom-4 md:left-4 md:translate-x-0">
       <div
-        className="hud-panel scanlines relative max-h-[44vh] overflow-y-auto rounded-xl p-4"
+        className="hud-panel scanlines pointer-events-auto relative max-h-[34vh] overflow-y-auto rounded-xl p-3 md:max-h-[44vh] md:p-4"
         style={{ borderColor: district.color + "88" }}
       >
         <div className="flex items-center justify-between">

@@ -412,3 +412,31 @@ body::after {
 /* Game mode: restore the native mouse cursor (portfolio's custom cursor is off here) */
 .kv-game, .kv-game * , .kv-game *::before, .kv-game *::after { cursor: default !important; }
 .kv-game button, .kv-game a, .kv-game [role="button"], .kv-game canvas { cursor: pointer !important; }
+
+/* Safe-area helpers for notched phones */
+.safe-t { top: calc(0.75rem + env(safe-area-inset-top)); }
+.safe-b { bottom: calc(1rem + env(safe-area-inset-bottom)); }
+.safe-l { left: calc(0.75rem + env(safe-area-inset-left)); }
+.safe-r { right: calc(0.75rem + env(safe-area-inset-right)); }
+
+/* Beautiful, thumb-friendly touch controls */
+.touch-btn {
+  display: flex; align-items: center; justify-content: center;
+  color: #d6fff5; font-family: var(--font-mono, monospace);
+  background: radial-gradient(120% 120% at 50% 20%, rgba(45,212,191,0.22), rgba(6,16,26,0.62) 70%);
+  border: 1px solid rgba(94,234,212,0.5);
+  box-shadow: 0 6px 20px rgba(2,10,16,0.45), 0 0 16px rgba(45,212,191,0.18), inset 0 1px 0 rgba(255,255,255,0.14);
+  backdrop-filter: blur(8px);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none; touch-action: none;
+  transition: transform 0.08s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+.touch-btn:active {
+  transform: scale(0.92);
+  background: radial-gradient(120% 120% at 50% 20%, rgba(94,234,212,0.5), rgba(8,22,32,0.7) 70%);
+  box-shadow: 0 2px 10px rgba(2,10,16,0.5), 0 0 26px rgba(94,234,212,0.5), inset 0 0 14px rgba(94,234,212,0.25);
+}
+.touch-btn-accent {
+  border-color: rgba(125,211,252,0.55);
+  background: radial-gradient(120% 120% at 50% 20%, rgba(56,189,248,0.24), rgba(6,16,26,0.62) 70%);
+}

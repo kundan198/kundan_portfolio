@@ -1,7 +1,7 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
+import { Suspense, useEffect } from "react";
 import { Physics } from "@react-three/rapier";
 import * as THREE from "three";
 import Environment from "./three/Environment";
@@ -33,6 +33,20 @@ const QUALITY = {
   ultra: { dpr: [1, 1.6] as [number, number], shadows: "soft" as const },
 };
 
+// Widen the field of view on narrow / portrait phones so more of the world fits.
+function AdaptiveFov() {
+  const camera = useThree((s) => s.camera);
+  const width = useThree((s) => s.size.width);
+  const height = useThree((s) => s.size.height);
+  useEffect(() => {
+    const aspect = width / Math.max(1, height);
+    const cam = camera as THREE.PerspectiveCamera;
+    cam.fov = aspect < 0.7 ? 74 : aspect < 1 ? 66 : 58;
+    cam.updateProjectionMatrix();
+  }, [camera, width, height]);
+  return null;
+}
+
 export default function World() {
   const graphicsQuality = useGame((s) => s.graphicsQuality);
   const quality = QUALITY[graphicsQuality];
@@ -56,6 +70,7 @@ export default function World() {
       }}
     >
       <Suspense fallback={null}>
+        <AdaptiveFov />
         <AdaptivePerformance />
         <Environment />
         <Physics gravity={[0, -22, 0]} timeStep="vary">

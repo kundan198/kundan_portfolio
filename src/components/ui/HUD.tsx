@@ -35,8 +35,8 @@ export default function HUD() {
   return (
     <>
       {/* top-left: mission tracker */}
-      <div className="pointer-events-none fixed left-4 top-4 z-40 w-72">
-        <div className="hud-panel rounded-lg p-3">
+      <div className="pointer-events-none fixed safe-l safe-t z-40 w-[min(15.5rem,calc(100vw-7rem))] md:w-72">
+        <div className="hud-panel rounded-lg p-2.5 md:p-3">
           <div className="hud-text text-[10px] text-teal-300/80">WORLD RESTORATION</div>
           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
             <div
@@ -61,7 +61,7 @@ export default function HUD() {
       </div>
 
       {/* top-right: controls */}
-      <div className="fixed right-4 top-4 z-40 flex gap-2">
+      <div className="fixed safe-r safe-t z-40 flex gap-1.5 md:gap-2">
         <button onClick={toggleMuted} className="hud-panel rounded-lg px-3 py-2 text-xs text-teal-200 hover:text-white">
           {muted ? "🔇" : "🔊"}
         </button>
@@ -85,9 +85,10 @@ export default function HUD() {
         </select>
       </div>
 
-      {/* bottom-right: minimap + compass */}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-40">
-        <div className="hud-panel relative h-40 w-40 overflow-hidden rounded-lg">
+      {/* minimap + compass — top-right on mobile (keeps the bottom-right thumb zone
+          clear for the action buttons), bottom-right on desktop */}
+      <div className="pointer-events-none fixed z-40 right-3 top-[calc(3.7rem+env(safe-area-inset-top))] md:right-4 md:top-auto md:bottom-4">
+        <div className="hud-panel relative h-28 w-28 md:h-40 md:w-40 overflow-hidden rounded-lg">
           <div className="hud-text absolute left-2 top-1 text-[9px] text-teal-300/60">MAP</div>
           <svg className="absolute inset-0 h-full w-full opacity-70" viewBox="0 0 100 100" preserveAspectRatio="none">
             <path d={mapPath(smoothRingRoad)} fill="none" stroke="#5eead4" strokeWidth="0.6" strokeLinecap="round" strokeLinejoin="round" />
