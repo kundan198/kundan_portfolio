@@ -239,28 +239,29 @@ function pickScale(species: Species, r: number) {
 }
 
 function foliageColor(species: Species, hue: number) {
+  // light, fresh green across every species
   const color = new THREE.Color();
   switch (species) {
     case "pine":
-      return color.setHSL(0.31 + hue * 0.04, 0.5, 0.38 + hue * 0.1);
+      return color.setHSL(0.3 + hue * 0.03, 0.5, 0.5 + hue * 0.08);
     case "cedar":
-      return color.setHSL(0.36 + hue * 0.03, 0.44, 0.36 + hue * 0.1);
+      return color.setHSL(0.31 + hue * 0.03, 0.48, 0.5 + hue * 0.08);
     case "maple":
-      return color.setHSL(0.2 + hue * 0.07, 0.5, 0.4 + hue * 0.1);
+      return color.setHSL(0.26 + hue * 0.05, 0.55, 0.54 + hue * 0.08);
     case "birch":
-      return color.setHSL(0.27 + hue * 0.06, 0.46, 0.42 + hue * 0.1);
+      return color.setHSL(0.29 + hue * 0.04, 0.52, 0.56 + hue * 0.08);
     case "willow":
-      return color.setHSL(0.25 + hue * 0.05, 0.52, 0.4 + hue * 0.1);
+      return color.setHSL(0.28 + hue * 0.04, 0.54, 0.54 + hue * 0.08);
     case "palm":
-      return color.setHSL(0.31 + hue * 0.04, 0.58, 0.42 + hue * 0.1);
+      return color.setHSL(0.3 + hue * 0.03, 0.58, 0.54 + hue * 0.08);
     case "sapling":
-      return color.setHSL(0.3 + hue * 0.04, 0.48, 0.4 + hue * 0.1);
+      return color.setHSL(0.3 + hue * 0.03, 0.52, 0.55 + hue * 0.08);
     case "moss":
-      return color.setHSL(0.27 + hue * 0.04, 0.42, 0.38 + hue * 0.1);
+      return color.setHSL(0.29 + hue * 0.03, 0.46, 0.5 + hue * 0.08);
     case "giant":
-      return color.setHSL(0.27 + hue * 0.05, 0.48, 0.38 + hue * 0.1);
+      return color.setHSL(0.29 + hue * 0.04, 0.5, 0.5 + hue * 0.08);
     default:
-      return color.setHSL(0.27 + hue * 0.06, 0.5, 0.4 + hue * 0.1);
+      return color.setHSL(0.29 + hue * 0.04, 0.52, 0.54 + hue * 0.08);
   }
 }
 
@@ -927,13 +928,13 @@ export default function Scenery() {
             {!isDead && (
               <instancedMesh ref={(m) => { crownRefs.current[species] = m; }} args={[undefined, undefined, count]} castShadow>
                 {isNeedle ? <coneGeometry args={[1, 1.2, 8]} /> : <dodecahedronGeometry args={[1, 1]} />}
-                <meshStandardMaterial roughness={0.88} vertexColors emissive="#1f3d21" emissiveIntensity={0.11} flatShading={species !== "willow"} onBeforeCompile={onCrownCompile} />
+                <meshStandardMaterial roughness={0.86} vertexColors emissive="#4f8f3c" emissiveIntensity={0.16} flatShading={species !== "willow"} onBeforeCompile={onCrownCompile} />
               </instancedMesh>
             )}
             {!isDead && species !== "sapling" && (
               <instancedMesh ref={(m) => { extraCrownRefs.current[species] = m; }} args={[undefined, undefined, count]} castShadow>
                 {isNeedle ? <coneGeometry args={[1, 1.1, 8]} /> : <icosahedronGeometry args={[1, 1]} />}
-                <meshStandardMaterial roughness={0.88} vertexColors emissive="#25451f" emissiveIntensity={0.1} transparent opacity={species === "willow" ? 0.84 : 0.96} flatShading onBeforeCompile={onCrownCompile} />
+                <meshStandardMaterial roughness={0.86} vertexColors emissive="#57993f" emissiveIntensity={0.15} transparent opacity={species === "willow" ? 0.84 : 0.96} flatShading onBeforeCompile={onCrownCompile} />
               </instancedMesh>
             )}
           </group>

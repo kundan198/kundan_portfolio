@@ -64,21 +64,22 @@ type Tower = { x: number; z: number; w: number; d: number; h: number; rot: numbe
 // deterministic tower cluster for a district
 function layout(id: string, cx: number, cz: number, tier: CityTier): Tower[] {
   const rnd = seeded(1000 + id.split("").reduce((a, c) => a + c.charCodeAt(0), 0));
-  const count = tier === "core" ? 15 : tier === "mid" ? 11 : 8;
+  // fewer buildings, kept as a tight cluster inside each district
+  const count = tier === "core" ? 7 : tier === "mid" ? 5 : 3;
   const maxH = tier === "core" ? 46 : tier === "mid" ? 30 : 20;
   const out: Tower[] = [];
   let tries = 0;
-  while (out.length < count && tries < count * 14) {
+  while (out.length < count && tries < count * 16) {
     tries++;
     const a = rnd() * Math.PI * 2;
     // ring the plaza (leave the centre clear for the mission marker + orbs)
-    const r = 10 + Math.pow(rnd(), 0.7) * 20;
+    const r = 9 + Math.pow(rnd(), 0.7) * 12;
     const x = cx + Math.cos(a) * r;
     const z = cz + Math.sin(a) * r;
     if (blocksRoad(x, z, 4.2)) continue;
     if (out.some((t) => Math.hypot(t.x - x, t.z - z) < 4.6)) continue;
     // tallest towers near the plaza edge -> a believable skyline peak
-    const central = 1 - THREE.MathUtils.clamp((r - 10) / 20, 0, 1);
+    const central = 1 - THREE.MathUtils.clamp((r - 9) / 12, 0, 1);
     const h = (tier === "low" ? 9 : 13) + Math.pow(rnd(), 1.5) * (maxH - 13) * (0.5 + central * 0.7);
     const w = 2.4 + rnd() * (tier === "core" ? 2.6 : 1.8);
     out.push({ x, z, w, d: w * (0.78 + rnd() * 0.4), h, rot: (rnd() - 0.5) * 0.9, r });

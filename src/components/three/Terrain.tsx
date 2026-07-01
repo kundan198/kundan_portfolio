@@ -28,9 +28,10 @@ export default function Terrain() {
         const grassDot = dot > 0.68 ? 1 : 0;
         const darkTuft = dot < -0.58 ? 1 : 0;
         const soilDot = dot < -0.9 ? 1 : 0;
-        data[i] = 150 + soft * 26 + fiber * 8 - grassDot * 14 - darkTuft * 4 + soilDot * 14;
-        data[i + 1] = 196 + soft * 40 + fiber * 16 + grassDot * 18 - soilDot * 4;
-        data[i + 2] = 116 + soft * 18 - grassDot * 8 - darkTuft * 5 - soilDot * 4;
+        // near-white detail so it doesn't darken the light-green vertex colours
+        data[i] = 202 + soft * 20 + fiber * 6 - grassDot * 10 - darkTuft * 3 + soilDot * 10;
+        data[i + 1] = 214 + soft * 16 + fiber * 10 + grassDot * 12 - soilDot * 4;
+        data[i + 2] = 150 + soft * 14 - grassDot * 6 - darkTuft * 3 - soilDot * 3;
       }
     }
     const texture = new THREE.DataTexture(data, size, size, THREE.RGBFormat);
@@ -46,13 +47,13 @@ export default function Terrain() {
     geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     const colors: number[] = [];
-    const cLow = new THREE.Color("#8fc15f");
-    const cGrass = new THREE.Color("#bce87f");
-    const cMoss = new THREE.Color("#85c163");
-    const cDirt = new THREE.Color("#a8945c");
-    const cRock = new THREE.Color("#9ba682");
-    const cSnow = new THREE.Color("#e3eaef");
-    const cRoadShoulder = new THREE.Color("#94855f");
+    const cLow = new THREE.Color("#a9da78");
+    const cGrass = new THREE.Color("#d2f39b");
+    const cMoss = new THREE.Color("#a6d774");
+    const cDirt = new THREE.Color("#bcac74");
+    const cRock = new THREE.Color("#b3bd93");
+    const cSnow = new THREE.Color("#e7edf0");
+    const cRoadShoulder = new THREE.Color("#aa9a72");
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const z = pos.getZ(i);
@@ -91,7 +92,7 @@ export default function Terrain() {
     <group>
       <RigidBody type="fixed" colliders="trimesh" friction={1}>
         <mesh geometry={geometry} receiveShadow>
-          <meshStandardMaterial vertexColors map={terrainTexture} roughness={0.96} metalness={0} />
+          <meshStandardMaterial vertexColors map={terrainTexture} roughness={0.94} metalness={0} emissive="#4f8f3c" emissiveIntensity={0.14} />
         </mesh>
       </RigidBody>
 
