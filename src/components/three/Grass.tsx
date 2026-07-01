@@ -22,16 +22,16 @@ import { tracker } from "@/lib/refs";
 /*    refilled from a precomputed pool only when the hero crosses a chunk.     */
 /* -------------------------------------------------------------------------- */
 
-const POOL_SPACING = 0.46; // metres between candidate blades (finest density)
+const POOL_SPACING = 0.5; // metres between candidate blades (finest density)
 const WORLD_RADIUS = 122;
-const STREAM_CELL = 24; // refill grass when the hero crosses this grid
+const STREAM_CELL = 30; // refill grass when the hero crosses this grid (larger = fewer rebuild hitches)
 
 type Tier = { nearR: number; farR: number; nearKeep: number; farKeep: number; nearCap: number; farCap: number };
 const TIERS: Record<GraphicsQuality, Tier> = {
-  low: { nearR: 24, farR: 44, nearKeep: 0.62, farKeep: 0.22, nearCap: 12000, farCap: 13000 },
-  medium: { nearR: 32, farR: 62, nearKeep: 0.8, farKeep: 0.32, nearCap: 18000, farCap: 21000 },
-  high: { nearR: 40, farR: 80, nearKeep: 0.92, farKeep: 0.36, nearCap: 27000, farCap: 34000 },
-  ultra: { nearR: 46, farR: 94, nearKeep: 1.0, farKeep: 0.42, nearCap: 36000, farCap: 46000 },
+  low: { nearR: 20, farR: 36, nearKeep: 0.46, farKeep: 0.16, nearCap: 8000, farCap: 9000 },
+  medium: { nearR: 28, farR: 52, nearKeep: 0.66, farKeep: 0.26, nearCap: 14000, farCap: 15000 },
+  high: { nearR: 36, farR: 70, nearKeep: 0.86, farKeep: 0.32, nearCap: 22000, farCap: 28000 },
+  ultra: { nearR: 44, farR: 88, nearKeep: 1.0, farKeep: 0.4, nearCap: 32000, farCap: 42000 },
 };
 
 // pond footprints (must match Terrain / Scenery)
@@ -67,7 +67,7 @@ type Pool = {
 // One tapered, slightly curved blade. Unit height (0..1), thin width baked in,
 // normals biased upward so blades read soft & bright under the sky (lush look).
 function makeBladeGeometry() {
-  const SEG = 4;
+  const SEG = 3;
   const rows = SEG + 1;
   const pos: number[] = [];
   const nor: number[] = [];
@@ -308,7 +308,6 @@ function GrassLayer({
         }
       }}
       args={[geom, undefined, capacity]}
-      receiveShadow
       frustumCulled={false}
     >
       <meshStandardMaterial

@@ -51,7 +51,7 @@ export default function Environment() {
   const clouds = useRef<THREE.Group>(null);
   const sunDisc = useRef<THREE.Mesh>(null);
   const sunMat = useRef<THREE.MeshBasicMaterial>(null);
-  const shadowSize = quality === "ultra" ? 2048 : quality === "high" ? 2048 : 1024;
+  const shadowSize = quality === "ultra" ? 2048 : quality === "high" ? 1536 : 1024;
 
   const skyUniforms = useMemo(
     () => ({
@@ -178,11 +178,11 @@ export default function Environment() {
         shadow-mapSize-width={shadowSize}
         shadow-mapSize-height={shadowSize}
         shadow-camera-near={1}
-        shadow-camera-far={300}
-        shadow-camera-left={-90}
-        shadow-camera-right={90}
-        shadow-camera-top={90}
-        shadow-camera-bottom={-90}
+        shadow-camera-far={260}
+        shadow-camera-left={-70}
+        shadow-camera-right={70}
+        shadow-camera-top={70}
+        shadow-camera-bottom={-70}
         shadow-bias={-0.0004}
         shadow-normalBias={0.02}
       />

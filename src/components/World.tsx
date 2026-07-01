@@ -26,10 +26,11 @@ import AdaptivePerformance from "./three/AdaptivePerformance";
 import { useGame } from "@/lib/store";
 
 const QUALITY = {
-  low: { dpr: [0.7, 1] as [number, number], shadows: false as const },
-  medium: { dpr: [1, 1.15] as [number, number], shadows: "soft" as const },
-  high: { dpr: [1, 1.5] as [number, number], shadows: "soft" as const },
-  ultra: { dpr: [1.25, 2] as [number, number], shadows: "soft" as const },
+  // dpr (pixel count) and shadows are the heaviest levers — kept lean per tier
+  low: { dpr: [0.55, 0.8] as [number, number], shadows: false as const },
+  medium: { dpr: [0.85, 1.05] as [number, number], shadows: "soft" as const },
+  high: { dpr: [1, 1.3] as [number, number], shadows: "soft" as const },
+  ultra: { dpr: [1, 1.6] as [number, number], shadows: "soft" as const },
 };
 
 export default function World() {

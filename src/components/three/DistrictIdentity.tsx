@@ -366,7 +366,7 @@ function SummitDistrict({ cx, cz }: { cx: number; cz: number }) {
 
 function districtRadius() {
   const q = useGame.getState().graphicsQuality;
-  return q === "low" ? 78 : q === "medium" ? 105 : q === "high" ? 140 : 180;
+  return q === "low" ? 52 : q === "medium" ? 78 : q === "high" ? 108 : 145;
 }
 
 function StreamedDistrict({

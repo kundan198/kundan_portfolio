@@ -109,9 +109,9 @@ function emptyCoverGroups(): Record<GroundCoverKind, GroundCover[]> {
 
 function streamRadius(kind: "tree" | "grass" | "rock") {
   const q = useGame.getState().graphicsQuality;
-  if (kind === "grass") return q === "low" ? 82 : q === "medium" ? 124 : q === "high" ? 156 : 190;
-  if (kind === "rock") return q === "low" ? 72 : q === "medium" ? 100 : q === "high" ? 130 : 165;
-  return q === "low" ? 78 : q === "medium" ? 110 : q === "high" ? 145 : 180;
+  if (kind === "grass") return q === "low" ? 58 : q === "medium" ? 86 : q === "high" ? 112 : 148;
+  if (kind === "rock") return q === "low" ? 52 : q === "medium" ? 74 : q === "high" ? 98 : 130;
+  return q === "low" ? 56 : q === "medium" ? 82 : q === "high" ? 108 : 142;
 }
 
 function nearStream(x: number, z: number, hx: number, hz: number, radius: number) {
@@ -549,7 +549,7 @@ export default function Scenery() {
   const visibleCarpetPatches = useMemo(() => {
     const [hx, , hz] = useGame.getState().heroPos;
     const q = useGame.getState().graphicsQuality;
-    const radius = q === "low" ? 72 : q === "medium" ? 110 : q === "high" ? 148 : 184;
+    const radius = q === "low" ? 54 : q === "medium" ? 80 : q === "high" ? 106 : 138;
     return carpetPatches.filter((p) => nearStream(p.x, p.z, hx, hz, radius));
   }, [carpetPatches, streamKey]);
 
