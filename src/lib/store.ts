@@ -113,7 +113,7 @@ export const useGame = create<GameState>((set, get) => ({
   nearVehicle: false,
   setNearVehicle: (b) => set({ nearVehicle: b }),
 
-  timeOfDay: 0.32,
+  timeOfDay: 0.33,
   setTimeOfDay: (t) => set({ timeOfDay: ((t % 1) + 1) % 1 }),
   weather: "clear",
   setWeather: (w) => set({ weather: w }),
@@ -142,7 +142,7 @@ export const useGame = create<GameState>((set, get) => ({
       activeDistrict: null,
       onFoot: true,
       nearVehicle: false,
-      timeOfDay: 0.32,
+      timeOfDay: 0.33,
       weather: "clear",
       heroPos: [-46, 1, -75],
       heroHeading: 0.68,

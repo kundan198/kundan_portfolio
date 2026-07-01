@@ -55,8 +55,11 @@ type CarpetPatch = {
 };
 
 const ROCKS = 70;
-const ROADSIDE_GRASS = 65000;
-const FIELD_GRASS = 150000;
+// Grass blades are now rendered by the dedicated Grass component (curved blades,
+// GLSL wind/LOD/streaming). Scenery keeps trees, rocks, flowers, ground cover and
+// the soft colour "carpet" patches that blend the ground beneath the grass.
+const ROADSIDE_GRASS = 0;
+const FIELD_GRASS = 0;
 const CARPET_PATCHES = 4200;
 const GROUND_COVER = 4200;
 const STREAM_CELL = 32;

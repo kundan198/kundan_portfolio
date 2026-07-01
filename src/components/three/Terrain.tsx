@@ -28,9 +28,9 @@ export default function Terrain() {
         const grassDot = dot > 0.68 ? 1 : 0;
         const darkTuft = dot < -0.58 ? 1 : 0;
         const soilDot = dot < -0.9 ? 1 : 0;
-        data[i] = 104 + soft * 24 + fiber * 8 - grassDot * 16 - darkTuft * 5 + soilDot * 14;
-        data[i + 1] = 150 + soft * 50 + fiber * 18 + grassDot * 22 - soilDot * 4;
-        data[i + 2] = 76 + soft * 18 - grassDot * 9 - darkTuft * 6 - soilDot * 4;
+        data[i] = 150 + soft * 26 + fiber * 8 - grassDot * 14 - darkTuft * 4 + soilDot * 14;
+        data[i + 1] = 196 + soft * 40 + fiber * 16 + grassDot * 18 - soilDot * 4;
+        data[i + 2] = 116 + soft * 18 - grassDot * 8 - darkTuft * 5 - soilDot * 4;
       }
     }
     const texture = new THREE.DataTexture(data, size, size, THREE.RGBFormat);
@@ -46,13 +46,13 @@ export default function Terrain() {
     geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     const colors: number[] = [];
-    const cLow = new THREE.Color("#79aa4f");
-    const cGrass = new THREE.Color("#a3d96a");
-    const cMoss = new THREE.Color("#6fa852");
-    const cDirt = new THREE.Color("#847447");
-    const cRock = new THREE.Color("#87906d");
-    const cSnow = new THREE.Color("#dbe3e8");
-    const cRoadShoulder = new THREE.Color("#62563e");
+    const cLow = new THREE.Color("#8fc15f");
+    const cGrass = new THREE.Color("#bce87f");
+    const cMoss = new THREE.Color("#85c163");
+    const cDirt = new THREE.Color("#a8945c");
+    const cRock = new THREE.Color("#9ba682");
+    const cSnow = new THREE.Color("#e3eaef");
+    const cRoadShoulder = new THREE.Color("#94855f");
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const z = pos.getZ(i);
@@ -77,9 +77,9 @@ export default function Terrain() {
         .lerp(cDirt, dirtMask)
         .lerp(cRock, Math.min(0.48, rockMask * 0.58 + slope * 0.055))
         .lerp(cSnow, snowMask)
-        .lerp(cRoadShoulder, roadMask * 0.82);
+        .lerp(cRoadShoulder, roadMask * 0.6);
 
-      c.offsetHSL(broad * 0.02 + fine * 0.01, 0.025 + micro * 0.01, 0.055 + fine * 0.025 + micro * 0.014);
+      c.offsetHSL(broad * 0.02 + fine * 0.01, 0.03 + micro * 0.01, 0.075 + fine * 0.025 + micro * 0.014);
       colors.push(c.r, c.g, c.b);
     }
     geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
