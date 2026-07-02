@@ -1,8 +1,67 @@
 "use client";
 
-import { setTouch, type InputState } from "@/lib/input";
+import { useRef, useState } from "react";
+import { setMove, clearMove, setTouch, type InputState } from "@/lib/input";
 
-function Btn({
+const KNOB_R = 46; // max knob travel (px)
+const DEADZONE = 0.18;
+
+function Joystick() {
+  const baseRef = useRef<HTMLDivElement>(null);
+  const active = useRef(false);
+  const [knob, setKnob] = useState({ x: 0, y: 0 });
+
+  const update = (e: React.PointerEvent) => {
+    if (!active.current || !baseRef.current) return;
+    const r = baseRef.current.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    let dx = e.clientX - cx;
+    let dy = e.clientY - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    if (len > KNOB_R) {
+      dx = (dx / len) * KNOB_R;
+      dy = (dy / len) * KNOB_R;
+    }
+    setKnob({ x: dx, y: dy });
+    const nx = dx / KNOB_R;
+    const ny = dy / KNOB_R;
+    if (Math.hypot(nx, ny) < DEADZONE) clearMove();
+    else setMove(nx, -ny); // pushing up = forward
+  };
+
+  const start = (e: React.PointerEvent) => {
+    e.preventDefault();
+    active.current = true;
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+    update(e);
+  };
+  const end = () => {
+    active.current = false;
+    setKnob({ x: 0, y: 0 });
+    clearMove();
+  };
+
+  return (
+    <div
+      ref={baseRef}
+      onPointerDown={start}
+      onPointerMove={update}
+      onPointerUp={end}
+      onPointerCancel={end}
+      className="joy-base pointer-events-auto h-32 w-32 rounded-full"
+    >
+      <div
+        className="joy-knob"
+        style={{ transform: `translate(${knob.x}px, ${knob.y}px)`, transition: active.current ? "none" : "transform 0.12s ease" }}
+      />
+    </div>
+  );
+}
+
+function ActionBtn({
   label,
   dir,
   className = "",
@@ -32,27 +91,20 @@ function Btn({
 
 export default function TouchControls({ onInteract }: { onInteract: () => void }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 safe-b z-40 flex items-end justify-between px-4 md:hidden">
-      {/* movement d-pad (left thumb) */}
-      <div className="pointer-events-auto grid grid-cols-3 grid-rows-3 gap-2">
-        <span />
-        <Btn label="▲" dir="forward" className="h-[3.4rem] w-[3.4rem] rounded-2xl text-lg" />
-        <span />
-        <Btn label="◀" dir="left" className="h-[3.4rem] w-[3.4rem] rounded-2xl text-lg" />
-        <Btn label="▼" dir="back" className="h-[3.4rem] w-[3.4rem] rounded-2xl text-lg" />
-        <Btn label="▶" dir="right" className="h-[3.4rem] w-[3.4rem] rounded-2xl text-lg" />
-      </div>
+    <div className="pointer-events-none fixed inset-x-0 safe-b z-40 flex items-end justify-between px-5 md:hidden">
+      {/* analog joystick (left thumb) — drag to move & steer */}
+      <Joystick />
 
       {/* action cluster (right thumb) */}
-      <div className="pointer-events-auto flex flex-col items-end gap-2">
-        <Btn label="JUMP" dir="jump" accent className="h-[4.4rem] w-[4.4rem] rounded-full text-sm font-semibold" />
-        <Btn label="BOOST" dir="boost" className="h-11 w-[4.4rem] rounded-2xl text-[11px] tracking-wide" />
+      <div className="pointer-events-auto flex flex-col items-end gap-2.5">
+        <ActionBtn label="JUMP" dir="jump" accent className="h-[4.6rem] w-[4.6rem] rounded-full text-sm font-semibold" />
+        <ActionBtn label="BOOST" dir="boost" className="h-11 w-[4.6rem] rounded-2xl text-[11px] tracking-wide" />
         <button
           onPointerDown={(e) => {
             e.preventDefault();
             onInteract();
           }}
-          className="touch-btn touch-btn-accent h-11 w-[4.4rem] rounded-2xl text-[11px] font-semibold tracking-wide"
+          className="touch-btn touch-btn-accent h-11 w-[4.6rem] rounded-2xl text-[11px] font-semibold tracking-wide"
         >
           E
         </button>

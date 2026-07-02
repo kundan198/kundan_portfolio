@@ -440,3 +440,22 @@ body::after {
   border-color: rgba(125,211,252,0.55);
   background: radial-gradient(120% 120% at 50% 20%, rgba(56,189,248,0.24), rgba(6,16,26,0.62) 70%);
 }
+
+/* Analog joystick */
+.joy-base {
+  position: relative;
+  background: radial-gradient(circle at 50% 42%, rgba(45,212,191,0.14), rgba(6,16,26,0.55) 72%);
+  border: 1px solid rgba(94,234,212,0.42);
+  box-shadow: 0 8px 26px rgba(2,10,16,0.45), inset 0 0 22px rgba(45,212,191,0.1);
+  backdrop-filter: blur(8px);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.joy-knob {
+  position: absolute; left: 50%; top: 50%;
+  width: 3.4rem; height: 3.4rem; margin-left: -1.7rem; margin-top: -1.7rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 50% 34%, rgba(160,245,232,0.92), rgba(22,132,120,0.8));
+  border: 1px solid rgba(190,255,246,0.7);
+  box-shadow: 0 6px 16px rgba(2,10,16,0.5), 0 0 20px rgba(94,234,212,0.45), inset 0 1px 0 rgba(255,255,255,0.3);
+  pointer-events: none;
+}

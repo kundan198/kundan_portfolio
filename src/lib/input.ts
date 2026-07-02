@@ -66,6 +66,20 @@ export function setTouch(dir: keyof InputState, on: boolean) {
   else state[dir] = on ? 1 : 0;
 }
 
+// Analog movement from the on-screen joystick. fx = strafe/turn axis (right +),
+// fy = drive axis (forward +), each in -1..1. Feeds the same forward/back/left/right
+// scalars the keyboard uses, so walking and driving both read it naturally.
+export function setMove(fx: number, fy: number) {
+  state.forward = Math.max(0, fy);
+  state.back = Math.max(0, -fy);
+  state.right = Math.max(0, fx);
+  state.left = Math.max(0, -fx);
+}
+
+export function clearMove() {
+  state.forward = state.back = state.left = state.right = 0;
+}
+
 export function onEdge(h: EdgeHandlers) {
   Object.assign(edge, h);
 }

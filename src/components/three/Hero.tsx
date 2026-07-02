@@ -200,11 +200,20 @@ export default function Hero() {
     tracker.hero.speed = sp;
     tracker.hero.moving = moving;
 
-    // respawn if fallen
-    if (pos.y < -20) {
-      rb.setTranslation({ x: SPAWN_X, y: terrainHeight(SPAWN_X, SPAWN_Z) + 3, z: SPAWN_Z }, true);
-      rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
-      heading.current = SPAWN_HEADING;
+    // Fell through the terrain (e.g. tunnelled on a slope near a district while
+    // collecting orbs)? Pop straight back up AT THE CURRENT SPOT — never teleport
+    // back to spawn/home, which was the "relocating somewhere else" bug.
+    if (onFoot) {
+      const groundY = terrainHeight(pos.x, pos.z);
+      if (pos.y < groundY - 1.4) {
+        rb.setTranslation({ x: pos.x, y: groundY + BODY_CENTER_Y + 0.15, z: pos.z }, true);
+        rb.setLinvel({ x: vel.x, y: 0, z: vel.z }, true);
+      } else if (pos.y < -40) {
+        // absolute last-resort safety only if something goes truly wrong
+        rb.setTranslation({ x: SPAWN_X, y: terrainHeight(SPAWN_X, SPAWN_Z) + 3, z: SPAWN_Z }, true);
+        rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        heading.current = SPAWN_HEADING;
+      }
     }
 
     storeT.current += dt;
