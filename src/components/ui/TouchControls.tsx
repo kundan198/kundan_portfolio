@@ -91,20 +91,20 @@ function ActionBtn({
 
 export default function TouchControls({ onInteract }: { onInteract: () => void }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 safe-b z-40 flex items-end justify-between px-5 md:hidden">
+    <div className="pointer-events-none fixed inset-x-0 safe-b z-40 flex items-end justify-between px-5 md:px-8 lg:hidden">
       {/* analog joystick (left thumb) — drag to move & steer */}
       <Joystick />
 
       {/* action cluster (right thumb) */}
       <div className="pointer-events-auto flex flex-col items-end gap-2.5">
-        <ActionBtn label="JUMP" dir="jump" accent className="h-[4.6rem] w-[4.6rem] rounded-full text-sm font-semibold" />
-        <ActionBtn label="BOOST" dir="boost" className="h-11 w-[4.6rem] rounded-2xl text-[11px] tracking-wide" />
+        <ActionBtn label="JUMP" dir="jump" accent className="h-[4.6rem] w-[4.6rem] rounded-full text-sm font-semibold md:h-20 md:w-20" />
+        <ActionBtn label="BOOST" dir="boost" className="h-11 w-[4.6rem] rounded-2xl text-[11px] tracking-wide md:h-12 md:w-20" />
         <button
           onPointerDown={(e) => {
             e.preventDefault();
             onInteract();
           }}
-          className="touch-btn touch-btn-accent h-11 w-[4.6rem] rounded-2xl text-[11px] font-semibold tracking-wide"
+          className="touch-btn touch-btn-accent h-11 w-[4.6rem] rounded-2xl text-[11px] font-semibold tracking-wide md:h-12 md:w-20"
         >
           E
         </button>

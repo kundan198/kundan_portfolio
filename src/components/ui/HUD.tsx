@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useGame } from "@/lib/store";
 import { districts } from "@/lib/portfolio";
 import { fireInteract } from "@/lib/input";
@@ -62,6 +63,14 @@ export default function HUD() {
 
       {/* top-right: controls */}
       <div className="fixed safe-r safe-t z-40 flex gap-1.5 md:gap-2">
+        <Link
+          href="/"
+          className="hud-panel group hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-cyan-100 transition hover:text-white sm:flex"
+          title="Switch to regular portfolio mode"
+        >
+          <span className="grid h-5 w-5 place-items-center rounded-full border border-cyan-200/40 bg-cyan-300/10 text-[9px] transition group-hover:rotate-45">R</span>
+          Regular
+        </Link>
         <button onClick={toggleMuted} className="hud-panel rounded-lg px-3 py-2 text-xs text-teal-200 hover:text-white">
           {muted ? "🔇" : "🔊"}
         </button>
@@ -84,6 +93,15 @@ export default function HUD() {
           <option value="ultra">Ultra</option>
         </select>
       </div>
+
+      <Link
+        href="/"
+        aria-label="Switch to regular portfolio mode"
+        className="hud-panel fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100 sm:hidden"
+      >
+        <span className="grid h-6 w-6 place-items-center rounded-full border border-cyan-200/40 bg-cyan-300/10 text-[10px]">R</span>
+        Regular Mode
+      </Link>
 
       {/* minimap + compass — top-right on mobile (keeps the bottom-right thumb zone
           clear for the action buttons), bottom-right on desktop */}
@@ -174,7 +192,7 @@ export default function HUD() {
       {/* district content panel */}
       {active && <DistrictPanel district={active} />}
 
-      {/* mobile controls */}
+      {/* phone + tablet controls */}
       <TouchControls onInteract={() => fireInteract()} />
     </>
   );
