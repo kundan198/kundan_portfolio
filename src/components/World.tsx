@@ -16,7 +16,7 @@ import Roadside from "./three/Roadside";
 import DistrictIdentity from "./three/DistrictIdentity";
 import HomeDistrict from "./three/HomeDistrict";
 import Scenery from "./three/Scenery";
-// import Grass from "./three/Grass"; // grass disabled for now
+import Grass from "./three/Grass";
 import AmbientLife from "./three/AmbientLife";
 import Streetlights from "./three/Streetlights";
 import CameraRig from "./three/CameraRig";
@@ -86,7 +86,7 @@ export default function World() {
         <DistrictIdentity />
         <HomeDistrict />
         <Scenery />
-        {/* <Grass /> */}
+        <Grass />
         <Streetlights />
         <AmbientLife />
         <CameraRig />

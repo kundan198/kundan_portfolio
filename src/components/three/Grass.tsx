@@ -22,16 +22,16 @@ import { tracker } from "@/lib/refs";
 /*    refilled from a precomputed pool only when the hero crosses a chunk.     */
 /* -------------------------------------------------------------------------- */
 
-const POOL_SPACING = 0.5; // metres between candidate blades (finest density)
+const POOL_SPACING = 0.32; // metres between candidate blades (finest density)
 const WORLD_RADIUS = 122;
 const STREAM_CELL = 30; // refill grass when the hero crosses this grid (larger = fewer rebuild hitches)
 
 type Tier = { nearR: number; farR: number; nearKeep: number; farKeep: number; nearCap: number; farCap: number };
 const TIERS: Record<GraphicsQuality, Tier> = {
-  low: { nearR: 20, farR: 36, nearKeep: 0.46, farKeep: 0.16, nearCap: 8000, farCap: 9000 },
-  medium: { nearR: 28, farR: 52, nearKeep: 0.66, farKeep: 0.26, nearCap: 14000, farCap: 15000 },
-  high: { nearR: 36, farR: 70, nearKeep: 0.86, farKeep: 0.32, nearCap: 22000, farCap: 28000 },
-  ultra: { nearR: 44, farR: 88, nearKeep: 1.0, farKeep: 0.4, nearCap: 32000, farCap: 42000 },
+  low: { nearR: 24, farR: 42, nearKeep: 0.7, farKeep: 0.28, nearCap: 18000, farCap: 22000 },
+  medium: { nearR: 34, farR: 62, nearKeep: 0.92, farKeep: 0.42, nearCap: 36000, farCap: 42000 },
+  high: { nearR: 42, farR: 82, nearKeep: 1.0, farKeep: 0.54, nearCap: 52000, farCap: 66000 },
+  ultra: { nearR: 52, farR: 100, nearKeep: 1.0, farKeep: 0.68, nearCap: 76000, farCap: 96000 },
 };
 
 // pond footprints (must match Terrain / Scenery)
@@ -122,12 +122,12 @@ function buildPool(): Pool {
       if (rf > 0.14) continue; // no grass on roads, sidewalks or their flattened corridor
       // density + height falloff hugging the road shoulder (1 in open field -> 0 at road)
       const edge = THREE.MathUtils.clamp(1 - rf / 0.14, 0, 1);
-      if (rnd() > 0.3 + edge * 0.7) continue;
+      if (rnd() > 0.55 + edge * 0.45) continue;
 
       // clear building plots
       let onPlot = false;
       for (const d of districts) {
-        if (Math.hypot(x - d.position[0], z - d.position[1]) < 8.5) { onPlot = true; break; }
+        if (Math.hypot(x - d.position[0], z - d.position[1]) < 6.5) { onPlot = true; break; }
       }
       if (onPlot) continue;
 
