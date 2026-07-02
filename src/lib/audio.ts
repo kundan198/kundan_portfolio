@@ -1,5 +1,7 @@
-// Procedural Web-Audio engine — no audio files. Ambient pad, footsteps, engine,
-// collect chimes, UI blips, the "world online" swell, and a boot drone.
+// Web-Audio engine: a looping music track (game-music.mp3) is the main bed, with a
+// subtle procedural pad underneath plus all the SFX (footsteps, engine, collect
+// chimes, UI blips, the "world online" swell, boot drone). Everything routes through
+// `master`, so the mute button silences the music too.
 class AudioEngine {
   ctx: AudioContext | null = null;
   master: GainNode | null = null;
@@ -7,6 +9,7 @@ class AudioEngine {
   started = false;
   muted = false;
   private engine: { osc: OscillatorNode; sub: OscillatorNode; gain: GainNode; lp: BiquadFilterNode } | null = null;
+  private musicEl: HTMLAudioElement | null = null;
 
   init() {
     if (this.ctx) {
@@ -27,7 +30,28 @@ class AudioEngine {
 
     this.buildAmbient();
     this.buildEngine();
+    this.buildMusic();
     this.started = true;
+  }
+
+  // Looping background track (transcoded to a small web-friendly loop). Routed
+  // through master so mute affects it; started here inside the user gesture.
+  private buildMusic() {
+    if (this.musicEl || !this.ctx || !this.master) return;
+    try {
+      const el = new Audio("/game-music.mp3");
+      el.loop = true;
+      el.preload = "auto";
+      this.musicEl = el;
+      const srcNode = this.ctx.createMediaElementSource(el);
+      const g = this.ctx.createGain();
+      g.gain.value = 0.85;
+      srcNode.connect(g);
+      g.connect(this.master);
+      el.play().catch(() => {});
+    } catch {
+      /* ignore — falls back to the procedural pad */
+    }
   }
 
   setMuted(m: boolean) {
@@ -63,7 +87,8 @@ class AudioEngine {
       o.start();
       lfo.start();
     }
-    this.musicGain!.gain.setTargetAtTime(0.5, ctx.currentTime, 2);
+    // subtle undertone only — the mp3 track is the main musical bed now
+    this.musicGain!.gain.setTargetAtTime(0.12, ctx.currentTime, 2);
   }
 
   // vitality 0..1 -> brighter, richer pad
