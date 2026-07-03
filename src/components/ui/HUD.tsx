@@ -35,8 +35,9 @@ export default function HUD() {
 
   return (
     <>
-      {/* top-left: mission tracker */}
-      <div className="pointer-events-none fixed safe-l safe-t z-40 w-[min(15.5rem,calc(100vw-7rem))] md:w-72">
+      {/* top-left: mission tracker — dropped below the top control row on mobile so
+          it never collides with the exit / mute / quality controls */}
+      <div className="pointer-events-none fixed safe-l top-[calc(3.6rem+env(safe-area-inset-top))] z-40 w-[min(15.5rem,calc(100vw-4rem))] md:top-3 md:w-72">
         <div className="hud-panel rounded-lg p-2.5 md:p-3">
           <div className="hud-text text-[10px] text-teal-300/80">WORLD RESTORATION</div>
           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
@@ -65,11 +66,12 @@ export default function HUD() {
       <div className="fixed safe-r safe-t z-40 flex gap-1.5 md:gap-2">
         <Link
           href="/"
-          className="hud-panel group hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-cyan-100 transition hover:text-white sm:flex"
-          title="Switch to regular portfolio mode"
+          className="hud-panel group flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold uppercase tracking-[0.18em] text-cyan-100 transition hover:text-white"
+          title="Back to the regular portfolio"
+          aria-label="Back to the regular portfolio"
         >
-          <span className="grid h-5 w-5 place-items-center rounded-full border border-cyan-200/40 bg-cyan-300/10 text-[9px] transition group-hover:rotate-45">R</span>
-          Regular
+          <span className="grid h-5 w-5 place-items-center rounded-full border border-cyan-200/40 bg-cyan-300/10 text-sm leading-none transition group-hover:-translate-x-0.5">‹</span>
+          <span className="hidden sm:inline">Portfolio</span>
         </Link>
         <button onClick={toggleMuted} className="hud-panel rounded-lg px-3 py-2 text-xs text-teal-200 hover:text-white">
           {muted ? "🔇" : "🔊"}
@@ -93,15 +95,6 @@ export default function HUD() {
           <option value="ultra">Ultra</option>
         </select>
       </div>
-
-      <Link
-        href="/"
-        aria-label="Switch to regular portfolio mode"
-        className="hud-panel fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-cyan-100 sm:hidden"
-      >
-        <span className="grid h-6 w-6 place-items-center rounded-full border border-cyan-200/40 bg-cyan-300/10 text-[10px]">R</span>
-        Regular Mode
-      </Link>
 
       {/* minimap + compass — top-right on mobile (keeps the bottom-right thumb zone
           clear for the action buttons), bottom-right on desktop */}
