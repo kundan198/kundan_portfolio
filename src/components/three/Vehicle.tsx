@@ -9,15 +9,60 @@ import { getInput } from "@/lib/input";
 import { tracker } from "@/lib/refs";
 import { audio } from "@/lib/audio";
 import { terrainHeight } from "@/lib/noise";
+import { resolveBuildingCollision } from "@/lib/occluders";
 
-const ACCEL = 22;
-const MAX_SPEED = 32;
-const REVERSE_SPEED = 12;
-const TURN_RATE = 2.1;
+/* -------------------------------------------------------------------------- */
+/*  Physically-modelled car.                                                   */
+/*                                                                            */
+/*  Longitudinal: engine force, service brakes, aero drag (∝ v²), rolling     */
+/*  resistance and the gravity component along the slope — hills genuinely    */
+/*  slow the car down and pull it back.                                       */
+/*  Lateral: velocity is a real 2D vector; each frame it is decomposed into   */
+/*  the car's new frame and the sideways component decays with tyre grip.     */
+/*  Space is a handbrake — grip drops and the rear steps out (drift).        */
+/*  Steering: speed-sensitive bicycle model (yaw rate = v/L · tan δ).         */
+/*  Suspension: each wheel samples the terrain; the body rides a spring-      */
+/*  damper on the average contact height, with weight-transfer pitch/roll.    */
+/*  Buildings are solid — the car collides and slides along their walls.      */
+/* -------------------------------------------------------------------------- */
+
+const ENGINE_ACCEL = 23; // peak drive acceleration, m/s²
+const BOOST_MULT = 1.45;
+const BRAKE_DECEL = 30;
+const HANDBRAKE_DECEL = 15;
+const ROLL_RESIST = 1.6; // m/s², constant while rolling
+const DRAG = 0.024; // m/s² per (m/s)² -> ~29 m/s top speed on the flat
+const REVERSE_ACCEL = 12;
+const MAX_REVERSE = 9;
+const GRAVITY = 9.81;
+const WHEELBASE = 2.6;
+const TRACK = 1.96;
+const WHEEL_R = 0.4;
+const MAX_STEER = 0.6; // rad at standstill
+const STEER_RATE = 7; // steering slew, rad/s
+const GRIP = 7.5; // lateral slip decay (1/s)
+const DRIFT_GRIP = 1.9; // grip while the handbrake is pulled
+const SUSP_STIFF = 105; // body heave spring
+const SUSP_DAMP = 13;
+const CAR_BODY_R = 1.5; // collision footprint vs buildings
+const RIDE = 0.55;
+const MAX_R = 116;
 const CAR_X = -66;
 const CAR_Z = -50;
 const CAR_HEADING = 0.55;
-const RIDE = 0.55; // origin height above the terrain so the wheels rest on the ground
+
+// wheel anchor offsets in car space (x = right, z = forward)
+const WHEELS = [
+  { ox: -0.98, oz: 1.28 }, // FL
+  { ox: 0.98, oz: 1.28 }, // FR
+  { ox: -0.98, oz: -1.32 }, // BL
+  { ox: 0.98, oz: -1.32 }, // BR
+];
+
+const _quat = new THREE.Quaternion();
+const _euler = new THREE.Euler();
+const _pos = { x: 0, z: 0 };
+const contacts = [0, 0, 0, 0];
 
 export default function Vehicle() {
   const body = useRef<RapierRigidBody>(null);
@@ -25,13 +70,19 @@ export default function Vehicle() {
   const wheelFR = useRef<THREE.Group>(null);
   const wheelBL = useRef<THREE.Group>(null);
   const wheelBR = useRef<THREE.Group>(null);
+  const suspRefs = [useRef<THREE.Group>(null), useRef<THREE.Group>(null), useRef<THREE.Group>(null), useRef<THREE.Group>(null)];
   const chassis = useRef<THREE.Group>(null);
   const brakeL = useRef<THREE.MeshStandardMaterial>(null);
   const brakeR = useRef<THREE.MeshStandardMaterial>(null);
 
   const heading = useRef(CAR_HEADING);
-  const speed = useRef(0);
+  const vx = useRef(0);
+  const vz = useRef(0);
+  const steer = useRef(0);
   const wheelSpin = useRef(0);
+  const bodyY = useRef(terrainHeight(CAR_X, CAR_Z) + RIDE);
+  const bodyVy = useRef(0);
+  const prevVF = useRef(0);
   const wasNear = useRef(false);
 
   // shared materials (defined once)
@@ -47,7 +98,8 @@ export default function Vehicle() {
     tail: new THREE.MeshStandardMaterial({ color: "#ff2a2a", emissive: "#ff1a1a", emissiveIntensity: 1.4 }),
   }), []);
 
-  useFrame((_, dt) => {
+  useFrame((_, frameDt) => {
+    const dt = Math.min(frameDt, 1 / 30);
     const rb = body.current;
     if (!rb) return;
     const g = useGame.getState();
@@ -63,77 +115,182 @@ export default function Vehicle() {
     if (!g.onFoot) wasNear.current = false;
 
     const input = getInput();
-    let steer = 0;
     let braking = false;
+    let handbrake = false;
+
+    // frame axes from the CURRENT heading (updated below, then re-derived)
+    let fx = Math.sin(heading.current);
+    let fz = Math.cos(heading.current);
+
+    // signed forward speed drives steering feel and the yaw model
+    let vF = vx.current * fx + vz.current * fz;
 
     if (driving) {
       const throttle = input.forward - input.back;
-      steer = input.left - input.right;
-      const boost = input.boost ? 1.5 : 1;
+      handbrake = input.jump;
 
-      if (throttle > 0) speed.current += ACCEL * throttle * boost * dt;
-      else if (throttle < 0) { speed.current += ACCEL * throttle * dt; braking = speed.current > 0; }
-      else speed.current *= 1 - Math.min(1, dt * 1.2); // coast
+      // steering wheel slews toward the input; usable angle shrinks with speed
+      const steerLimit = MAX_STEER / (1 + Math.abs(vF) * 0.055);
+      const steerTarget = (input.left - input.right) * steerLimit;
+      steer.current += THREE.MathUtils.clamp(steerTarget - steer.current, -STEER_RATE * dt, STEER_RATE * dt);
 
-      speed.current = THREE.MathUtils.clamp(speed.current, -REVERSE_SPEED, MAX_SPEED * boost);
+      // yaw from the bicycle model — no yaw when the car isn't rolling
+      const yawRate = Math.abs(vF) > 0.05 ? (vF / WHEELBASE) * Math.tan(steer.current) * (handbrake ? 1.4 : 1) : 0;
+      heading.current += yawRate * dt;
 
-      // steer scales with speed; reverse flips direction
-      const speedFactor = THREE.MathUtils.clamp(Math.abs(speed.current) / 6, 0, 1);
-      heading.current += steer * TURN_RATE * dt * speedFactor * Math.sign(speed.current || 1);
-
-      audio.updateEngine(Math.min(1, Math.abs(speed.current) / MAX_SPEED), Math.abs(throttle) > 0.1);
-      wheelSpin.current += speed.current * dt * 1.4;
+      audio.updateEngine(Math.min(1, Math.abs(vF) / 30), Math.abs(throttle) > 0.1);
     } else {
-      speed.current *= 1 - Math.min(1, dt * 3);
+      steer.current += (0 - steer.current) * Math.min(1, dt * 6);
       audio.engineOff();
     }
 
-    // --- move in X/Z, then GLUE the car to the terrain surface. Setting the height
-    //     from terrainHeight() every frame (with gravity disabled) means the car can
-    //     never tunnel through the collision mesh or fall into a gap, so it never
-    //     drops out of the world and teleports back home. ---
-    const dir = new THREE.Vector3(Math.sin(heading.current), 0, Math.cos(heading.current));
-    let nx = pos.x + dir.x * speed.current * dt;
-    let nz = pos.z + dir.z * speed.current * dt;
-    // keep the car inside the world so it can't drive off the terrain mesh
-    const MAX_R = 116;
-    const dist = Math.hypot(nx, nz);
-    if (dist > MAX_R) {
-      nx = (nx / dist) * MAX_R;
-      nz = (nz / dist) * MAX_R;
-      speed.current *= 0.3; // bleed off speed at the boundary
+    // re-derive axes after the yaw step; the old velocity decomposed in the NEW
+    // frame naturally produces lateral slip that the tyres then bite down on
+    fx = Math.sin(heading.current);
+    fz = Math.cos(heading.current);
+    const rx = Math.cos(heading.current);
+    const rz = -Math.sin(heading.current);
+    vF = vx.current * fx + vz.current * fz;
+    let vLat = vx.current * rx + vz.current * rz;
+
+    // ---- longitudinal forces ----
+    let aF = 0;
+    if (driving) {
+      const throttle = input.forward - input.back;
+      const boost = input.boost ? BOOST_MULT : 1;
+      if (throttle > 0.01) {
+        if (vF < -0.3) { aF += BRAKE_DECEL * throttle; braking = true; }
+        else aF += ENGINE_ACCEL * throttle * boost;
+      } else if (throttle < -0.01) {
+        if (vF > 0.3) { aF += BRAKE_DECEL * throttle; braking = true; }
+        else aF += REVERSE_ACCEL * throttle;
+      }
+      if (handbrake && Math.abs(vF) > 0.2) { aF -= Math.sign(vF) * HANDBRAKE_DECEL; braking = true; }
+    } else if (Math.abs(vF) > 0.2) {
+      aF -= Math.sign(vF) * BRAKE_DECEL * 0.4; // parked — brakes hold it
     }
-    const gy = terrainHeight(nx, nz) + RIDE;
-    rb.setTranslation({ x: nx, y: gy, z: nz }, true);
+
+    // resistances always oppose motion
+    if (Math.abs(vF) > 0.05) aF -= Math.sign(vF) * (ROLL_RESIST + DRAG * vF * vF);
+
+    // gravity along the slope: sample the grade under the axles
+    const hAhead = terrainHeight(pos.x + fx * 1.3, pos.z + fz * 1.3);
+    const hBehind = terrainHeight(pos.x - fx * 1.3, pos.z - fz * 1.3);
+    const gradeF = (hAhead - hBehind) / 2.6;
+    aF -= GRAVITY * gradeF * 0.9;
+
+    vF += aF * dt;
+    vF = THREE.MathUtils.clamp(vF, -MAX_REVERSE, 60);
+    // don't let brakes push the car backwards through zero
+    if (braking && !driving) vF = Math.abs(vF) < 0.15 ? 0 : vF;
+
+    // ---- lateral: tyre grip bleeds sideways velocity; camber pulls downhill ----
+    const grip = handbrake ? DRIFT_GRIP : GRIP;
+    vLat *= Math.exp(-grip * dt);
+    const hRight = terrainHeight(pos.x + rx * 1.1, pos.z + rz * 1.1);
+    const hLeft = terrainHeight(pos.x - rx * 1.1, pos.z - rz * 1.1);
+    const gradeR = (hRight - hLeft) / 2.2;
+    vLat -= GRAVITY * gradeR * 0.35 * dt;
+
+    vx.current = fx * vF + rx * vLat;
+    vz.current = fz * vF + rz * vLat;
+
+    // ---- integrate position ----
+    let nx = pos.x + vx.current * dt;
+    let nz = pos.z + vz.current * dt;
+
+    // Higgs-field boundary: slide along the barrier, keep tangential speed
+    const dc = Math.hypot(nx, nz);
+    if (dc > MAX_R) {
+      const ux = nx / dc;
+      const uz = nz / dc;
+      nx = ux * MAX_R;
+      nz = uz * MAX_R;
+      const vRad = vx.current * ux + vz.current * uz;
+      if (vRad > 0) {
+        vx.current -= ux * vRad;
+        vz.current -= uz * vRad;
+        tracker.field.impact = Math.min(1, tracker.field.impact + 0.3 + vRad * 0.03);
+        tracker.field.x = nx;
+        tracker.field.z = nz;
+      }
+    }
+
+    // buildings are solid: push out and kill the velocity into the wall
+    _pos.x = nx;
+    _pos.z = nz;
+    const n = resolveBuildingCollision(_pos, CAR_BODY_R);
+    if (n) {
+      nx = _pos.x;
+      nz = _pos.z;
+      const vInto = vx.current * -n.x + vz.current * -n.z;
+      if (vInto > 0) {
+        vx.current += n.x * vInto;
+        vz.current += n.z * vInto;
+      }
+      vF = vx.current * fx + vz.current * fz;
+    }
+
+    // ---- suspension: each wheel finds its contact, body rides a spring ----
+    let sum = 0;
+    for (let i = 0; i < 4; i++) {
+      const w = WHEELS[i];
+      const wxw = nx + rx * w.ox + fx * w.oz;
+      const wzw = nz + rz * w.ox + fz * w.oz;
+      contacts[i] = terrainHeight(wxw, wzw);
+      sum += contacts[i];
+    }
+    const targetY = sum / 4 + RIDE;
+    bodyVy.current += (targetY - bodyY.current) * SUSP_STIFF * dt - bodyVy.current * SUSP_DAMP * dt;
+    bodyY.current += bodyVy.current * dt;
+    // hard limits so the body can never sink into the ground or float away
+    bodyY.current = THREE.MathUtils.clamp(bodyY.current, targetY - 0.28, targetY + 0.4);
+    bodyY.current = Math.max(bodyY.current, terrainHeight(nx, nz) + 0.22);
+
+    rb.setTranslation({ x: nx, y: bodyY.current, z: nz }, true);
     rb.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    _euler.set(0, heading.current, 0);
+    rb.setRotation(_quat.setFromEuler(_euler), true);
 
-    // pitch the body to follow the slope + a little lean into turns, for a natural ride
+    // ---- body attitude: terrain pitch/roll + dynamic weight transfer ----
     if (chassis.current) {
-      const ahead = terrainHeight(nx + dir.x * 1.6, nz + dir.z * 1.6);
-      const behind = terrainHeight(nx - dir.x * 1.6, nz - dir.z * 1.6);
-      const pitch = THREE.MathUtils.clamp((behind - ahead) / 3.2, -0.35, 0.35);
-      const roll = THREE.MathUtils.clamp(-steer * (Math.abs(speed.current) / MAX_SPEED) * 0.12, -0.12, 0.12);
-      chassis.current.rotation.x += (pitch - chassis.current.rotation.x) * Math.min(1, dt * 6);
-      chassis.current.rotation.z += (roll - chassis.current.rotation.z) * Math.min(1, dt * 6);
+      const hF = (contacts[0] + contacts[1]) / 2;
+      const hB = (contacts[2] + contacts[3]) / 2;
+      const hL = (contacts[0] + contacts[2]) / 2;
+      const hR = (contacts[1] + contacts[3]) / 2;
+      const longAccel = (vF - prevVF.current) / Math.max(dt, 1e-4);
+      const yawNow = Math.abs(vF) > 0.05 ? (vF / WHEELBASE) * Math.tan(steer.current) : 0;
+      const latAccel = vF * yawNow;
+      const pitch = THREE.MathUtils.clamp((hB - hF) / WHEELBASE, -0.4, 0.4)
+        + THREE.MathUtils.clamp(-longAccel * 0.0055, -0.05, 0.075); // brake dive / launch squat
+      const roll = THREE.MathUtils.clamp((hR - hL) / TRACK, -0.3, 0.3)
+        + THREE.MathUtils.clamp(-latAccel * 0.004, -0.09, 0.09); // lean out of the turn
+      chassis.current.rotation.x += (pitch - chassis.current.rotation.x) * Math.min(1, dt * 8);
+      chassis.current.rotation.z += (roll - chassis.current.rotation.z) * Math.min(1, dt * 8);
     }
-    rb.setRotation(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, heading.current, 0)), true);
+    prevVF.current = vF;
 
-    // wheels: roll (around X) + front steer (around Y)
-    const steerAngle = steer * 0.42;
-    if (wheelFL.current) { wheelFL.current.rotation.y = steerAngle; wheelFL.current.rotation.x = wheelSpin.current; }
-    if (wheelFR.current) { wheelFR.current.rotation.y = steerAngle; wheelFR.current.rotation.x = wheelSpin.current; }
+    // ---- wheels: conform to the ground, roll with true speed, steer up front ----
+    for (let i = 0; i < 4; i++) {
+      const s = suspRefs[i].current;
+      if (s) s.position.y = THREE.MathUtils.clamp(contacts[i] + WHEEL_R - bodyY.current, -0.33, 0.05);
+    }
+    wheelSpin.current += (vF / WHEEL_R) * dt;
+    if (wheelFL.current) { wheelFL.current.rotation.y = steer.current; wheelFL.current.rotation.x = wheelSpin.current; }
+    if (wheelFR.current) { wheelFR.current.rotation.y = steer.current; wheelFR.current.rotation.x = wheelSpin.current; }
     if (wheelBL.current) wheelBL.current.rotation.x = wheelSpin.current;
     if (wheelBR.current) wheelBR.current.rotation.x = wheelSpin.current;
-    // brake-light glow when reversing/braking
-    const bi = braking ? 3 : 1.2;
+
+    // brake-light glow when braking / handbraking
+    const bi = braking || handbrake ? 3 : 1.2;
     if (brakeL.current) brakeL.current.emissiveIntensity = bi;
     if (brakeR.current) brakeR.current.emissiveIntensity = bi;
 
     tracker.car.x = nx;
-    tracker.car.y = gy;
+    tracker.car.y = bodyY.current;
     tracker.car.z = nz;
     tracker.car.heading = heading.current;
-    tracker.car.speed = Math.abs(speed.current);
+    tracker.car.speed = Math.hypot(vx.current, vz.current);
   });
 
   const Wheel = ({ refObj }: { refObj: React.RefObject<THREE.Group | null> }) => (
@@ -238,11 +395,11 @@ export default function Vehicle() {
         ))}
       </group>
 
-      {/* wheels (kept level, outside the tilting chassis) */}
-      <group position={[-0.98, -0.15, 1.28]}><Wheel refObj={wheelFL} /></group>
-      <group position={[0.98, -0.15, 1.28]}><Wheel refObj={wheelFR} /></group>
-      <group position={[-0.98, -0.15, -1.32]}><Wheel refObj={wheelBL} /></group>
-      <group position={[0.98, -0.15, -1.32]}><Wheel refObj={wheelBR} /></group>
+      {/* wheels (kept level, outside the tilting chassis; each rides its own contact) */}
+      <group ref={suspRefs[0]} position={[-0.98, -0.15, 1.28]}><Wheel refObj={wheelFL} /></group>
+      <group ref={suspRefs[1]} position={[0.98, -0.15, 1.28]}><Wheel refObj={wheelFR} /></group>
+      <group ref={suspRefs[2]} position={[-0.98, -0.15, -1.32]}><Wheel refObj={wheelBL} /></group>
+      <group ref={suspRefs[3]} position={[0.98, -0.15, -1.32]}><Wheel refObj={wheelBR} /></group>
     </RigidBody>
   );
 }

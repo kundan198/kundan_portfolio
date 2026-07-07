@@ -333,7 +333,6 @@ function StoryVignette({ d, index }: { d: (typeof districts)[number]; index: num
           <boxGeometry args={[0.32, 0.18, 0.36]} />
           <meshStandardMaterial color="#f6e5a8" emissive="#f6c45f" emissiveIntensity={0.55} roughness={0.38} />
         </mesh>
-        {index < 2 && <pointLight position={[1.38, 1.8, 0]} color="#ffd991" intensity={0.22} distance={5} />}
       </group>
     </group>
   );

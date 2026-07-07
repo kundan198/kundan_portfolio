@@ -42,9 +42,8 @@ export default function Orb({
     <group ref={ref} position={position}>
       <mesh castShadow>
         <octahedronGeometry args={[0.5, 0]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.8} metalness={0.3} roughness={0.1} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2.6} metalness={0.3} roughness={0.1} />
       </mesh>
-      <pointLight color={color} intensity={3} distance={7} />
     </group>
   );
 }

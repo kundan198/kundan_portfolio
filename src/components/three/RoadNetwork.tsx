@@ -2,6 +2,7 @@
 
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { terrainHeight } from "@/lib/noise";
@@ -144,7 +145,7 @@ function LandmarkBeacon({ pos, color, height }: { pos: P; color: string; height:
         <cylinderGeometry args={[0.02, 0.04, height, 6]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.25} transparent opacity={0.28} />
       </mesh>
-      <pointLight position={[0, height, 0]} color={color} intensity={0.22} distance={18} />
+      <mesh position={[0, height, 0]}><sphereGeometry args={[0.22, 8, 6]} /><meshStandardMaterial color={color} emissive={color} emissiveIntensity={2.2} /></mesh>
     </group>
   );
 }
@@ -196,77 +197,114 @@ function roadItems(step = 14): RoadItem[] {
   return out;
 }
 
+// All static road furniture (reflectors, drains, lamp posts, guard rails) is
+// merged into ONE geometry per material — it used to be 300+ individual meshes
+// (and draw calls); now it renders in 7.
 function RoadEngineering() {
-  const items = useMemo(() => roadItems(), []);
-  const reflectors = items.filter((p) => p.i % 2 === 0);
-  const lights = items.filter((p) => (p.kind === "boulevard" || p.kind === "smart" || p.kind === "coastal" || p.kind === "service") && p.i % 5 === 0);
-  const rails = items.filter((p) => (p.kind === "mountain" || p.kind === "coastal") && p.i % 2 === 0);
-  const drains = items.filter((p) => p.kind !== "trail" && p.i % 4 === 1);
+  const merged = useMemo(() => {
+    const items = roadItems();
+    const reflectors = items.filter((p) => p.i % 2 === 0);
+    const lights = items.filter((p) => (p.kind === "boulevard" || p.kind === "smart" || p.kind === "coastal" || p.kind === "service") && p.i % 5 === 0);
+    const rails = items.filter((p) => (p.kind === "mountain" || p.kind === "coastal") && p.i % 2 === 0);
+    const drains = items.filter((p) => p.kind !== "trail" && p.i % 4 === 1);
+
+    const buckets: Record<string, THREE.BufferGeometry[]> = {
+      reflWhite: [], reflSmart: [], drain: [], pole: [], head: [], railBeam: [], railPost: [],
+    };
+    const pushBox = (b: THREE.BufferGeometry[], w: number, h: number, d: number, x: number, y: number, z: number, ry = 0) => {
+      const g = new THREE.BoxGeometry(w, h, d);
+      if (ry) g.rotateY(ry);
+      g.translate(x, y, z);
+      b.push(g);
+    };
+    const pushCyl = (b: THREE.BufferGeometry[], rt: number, rb: number, h: number, x: number, y: number, z: number, seg = 8) => {
+      const g = new THREE.CylinderGeometry(rt, rb, h, seg);
+      g.translate(x, y, z);
+      b.push(g);
+    };
+
+    for (const p of reflectors) {
+      for (const side of [-1, 1]) {
+        const x = p.x + p.nx * side * (p.edge + 0.42);
+        const z = p.z + p.nz * side * (p.edge + 0.42);
+        pushBox(p.kind === "smart" ? buckets.reflSmart : buckets.reflWhite, 0.12, 0.1, 0.34, x, yAt(x, z, 0.12), z, Math.atan2(p.tx, p.tz));
+      }
+    }
+    for (const p of drains) {
+      const side = p.i % 8 < 4 ? -1 : 1;
+      const x = p.x + p.nx * side * (p.edge + 0.9);
+      const z = p.z + p.nz * side * (p.edge + 0.9);
+      pushBox(buckets.drain, 0.72, 0.035, 0.28, x, yAt(x, z, 0.045), z, Math.atan2(p.tx, p.tz));
+    }
+    for (const p of lights) {
+      const side = p.i % 10 < 5 ? -1 : 1;
+      const x = p.x + p.nx * side * (p.edge + 1.7);
+      const z = p.z + p.nz * side * (p.edge + 1.7);
+      const y = yAt(x, z);
+      const ry = Math.atan2(p.tx, p.tz);
+      pushCyl(buckets.pole, 0.045, 0.065, 3.3, x, y + 1.65, z);
+      const hx = x + Math.cos(ry) * 0.28 * side;
+      const hz = z - Math.sin(ry) * 0.28 * side;
+      pushBox(buckets.head, 0.52, 0.12, 0.16, hx, y + 3.32, hz, ry);
+    }
+    for (const p of rails) {
+      for (const side of [-1, 1]) {
+        const x = p.x + p.nx * side * (p.edge + 0.85);
+        const z = p.z + p.nz * side * (p.edge + 0.85);
+        const y = yAt(x, z, 0.42);
+        const ry = Math.atan2(p.tx, p.tz);
+        pushBox(buckets.railBeam, 0.1, 0.12, 2.6, x, y, z, ry);
+        for (const o of [-0.75, 0.75]) {
+          pushCyl(buckets.railPost, 0.035, 0.04, 0.72, x + Math.sin(ry) * o, y - 0.32, z + Math.cos(ry) * o, 6);
+        }
+      }
+    }
+
+    const out: Record<string, THREE.BufferGeometry | null> = {};
+    for (const k of Object.keys(buckets)) {
+      out[k] = buckets[k].length ? mergeGeometries(buckets[k], false) : null;
+      buckets[k].forEach((g) => g.dispose());
+    }
+    return out;
+  }, []);
+
   return (
     <group>
-      {reflectors.map((p) => (
-        [-1, 1].map((side) => {
-          const x = p.x + p.nx * side * (p.edge + 0.42);
-          const z = p.z + p.nz * side * (p.edge + 0.42);
-          return (
-            <mesh key={`${p.i}-${side}`} position={[x, yAt(x, z, 0.12), z]} rotation={[0, Math.atan2(p.tx, p.tz), 0]}>
-              <boxGeometry args={[0.12, 0.1, 0.34]} />
-              <meshStandardMaterial color={p.kind === "smart" ? "#38bdf8" : "#f8fafc"} emissive={p.kind === "smart" ? "#0ea5e9" : "#fef3c7"} emissiveIntensity={0.45} roughness={0.42} />
-            </mesh>
-          );
-        })
-      ))}
-      {drains.map((p) => {
-        const side = p.i % 8 < 4 ? -1 : 1;
-        const x = p.x + p.nx * side * (p.edge + 0.9);
-        const z = p.z + p.nz * side * (p.edge + 0.9);
-        return (
-          <mesh key={p.i} position={[x, yAt(x, z, 0.045), z]} rotation={[-Math.PI / 2, 0, Math.atan2(p.tx, p.tz)]}>
-            <boxGeometry args={[0.72, 0.28, 0.035]} />
-            <meshStandardMaterial color="#2f343b" roughness={0.8} metalness={0.2} />
-          </mesh>
-        );
-      })}
-      {lights.map((p) => {
-        const side = p.i % 10 < 5 ? -1 : 1;
-        const x = p.x + p.nx * side * (p.edge + 1.7);
-        const z = p.z + p.nz * side * (p.edge + 1.7);
-        return (
-          <group key={p.i} position={[x, yAt(x, z), z]} rotation={[0, Math.atan2(p.tx, p.tz), 0]}>
-            <mesh castShadow position={[0, 1.65, 0]}>
-              <cylinderGeometry args={[0.045, 0.065, 3.3, 8]} />
-              <meshStandardMaterial color="#334155" metalness={0.38} roughness={0.45} />
-            </mesh>
-            <mesh position={[0.28 * side, 3.32, 0]}>
-              <boxGeometry args={[0.52, 0.12, 0.16]} />
-              <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={1.1} roughness={0.35} />
-            </mesh>
-            <pointLight position={[0.28 * side, 3.2, 0]} color="#ffd69a" intensity={0.34} distance={10} />
-          </group>
-        );
-      })}
-      {rails.map((p) => (
-        [-1, 1].map((side) => {
-          const x = p.x + p.nx * side * (p.edge + 0.85);
-          const z = p.z + p.nz * side * (p.edge + 0.85);
-          return (
-            <group key={`${p.i}-${side}`} position={[x, yAt(x, z, 0.42), z]} rotation={[0, Math.atan2(p.tx, p.tz), 0]}>
-              <mesh castShadow>
-                <boxGeometry args={[0.1, 0.12, 2.6]} />
-                <meshStandardMaterial color="#cbd5e1" metalness={0.35} roughness={0.4} />
-              </mesh>
-              <mesh castShadow position={[0, -0.32, -0.75]}>
-                <cylinderGeometry args={[0.035, 0.04, 0.72, 6]} />
-                <meshStandardMaterial color="#64748b" metalness={0.25} roughness={0.55} />
-              </mesh>
-              <mesh castShadow position={[0, -0.32, 0.75]}>
-                <cylinderGeometry args={[0.035, 0.04, 0.72, 6]} />
-                <meshStandardMaterial color="#64748b" metalness={0.25} roughness={0.55} />
-              </mesh>
-            </group>
-          );
-        })
-      ))}
+      {merged.reflWhite && (
+        <mesh geometry={merged.reflWhite}>
+          <meshStandardMaterial color="#f8fafc" emissive="#fef3c7" emissiveIntensity={0.45} roughness={0.42} />
+        </mesh>
+      )}
+      {merged.reflSmart && (
+        <mesh geometry={merged.reflSmart}>
+          <meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={0.45} roughness={0.42} />
+        </mesh>
+      )}
+      {merged.drain && (
+        <mesh geometry={merged.drain}>
+          <meshStandardMaterial color="#2f343b" roughness={0.8} metalness={0.2} />
+        </mesh>
+      )}
+      {merged.pole && (
+        <mesh geometry={merged.pole} castShadow>
+          <meshStandardMaterial color="#334155" metalness={0.38} roughness={0.45} />
+        </mesh>
+      )}
+      {merged.head && (
+        <mesh geometry={merged.head}>
+          <meshStandardMaterial color="#fde68a" emissive="#fbbf24" emissiveIntensity={1.6} roughness={0.35} />
+        </mesh>
+      )}
+      {merged.railBeam && (
+        <mesh geometry={merged.railBeam} castShadow>
+          <meshStandardMaterial color="#cbd5e1" metalness={0.35} roughness={0.4} />
+        </mesh>
+      )}
+      {merged.railPost && (
+        <mesh geometry={merged.railPost}>
+          <meshStandardMaterial color="#64748b" metalness={0.25} roughness={0.55} />
+        </mesh>
+      )}
       {renderRoads.filter((r) => r.label && districtPos[r.id]).map((r, i) => {
         const p = r.points[Math.max(1, r.points.length - 5)];
         const x = p[0] + (i % 2 ? 3.2 : -3.2);

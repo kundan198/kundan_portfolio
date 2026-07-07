@@ -19,14 +19,29 @@ const CAPSULE_RADIUS = 0.32;
 const BODY_CENTER_Y = CAPSULE_HALF + CAPSULE_RADIUS;
 const STEP_HEIGHT = 0.72;
 const GROUND_STICK = 0.08;
+const MAX_R = 116; // Higgs-field boundary
 const SPAWN_X = -46;
 const SPAWN_Z = -75;
 const SPAWN_HEADING = 0.68;
+
+// per-frame colour targets (allocated once, not in the render loop)
+const C_HOODIE = new THREE.Color("#1f4d5d");
+const C_HOODIE_WET = new THREE.Color("#132e38");
+const C_HOODIE_DUST = new THREE.Color("#3d4a44");
+const C_PANTS = new THREE.Color("#1d2633");
+const C_PANTS_WET = new THREE.Color("#121821");
+const C_PANTS_DUST = new THREE.Color("#4a443a");
+const C_SKIN = new THREE.Color("#c98f68");
+const C_SKIN_WET = new THREE.Color("#b98263");
+const C_HAIR = new THREE.Color("#17110d");
+const C_HAIR_WET = new THREE.Color("#090706");
 
 export default function Hero() {
   const body = useRef<RapierRigidBody>(null);
   const group = useRef<THREE.Group>(null);
   const { rapier, world } = useRapier();
+  // one reusable ray — its origin is mutated each frame instead of re-allocating
+  const groundRay = useRef<InstanceType<typeof rapier.Ray> | null>(null);
 
   const heading = useRef(SPAWN_HEADING);
   const jumpCount = useRef(0);
@@ -87,7 +102,11 @@ export default function Hero() {
     // Ground check combines Rapier raycasts with the same terrain height function
     // used by the collision mesh, so walking remains planted on sloped triangles.
     const originY = pos.y - BODY_CENTER_Y + 0.12;
-    const ray = new rapier.Ray({ x: pos.x, y: originY, z: pos.z }, { x: 0, y: -1, z: 0 });
+    if (!groundRay.current) groundRay.current = new rapier.Ray({ x: pos.x, y: originY, z: pos.z }, { x: 0, y: -1, z: 0 });
+    const ray = groundRay.current;
+    ray.origin.x = pos.x;
+    ray.origin.y = originY;
+    ray.origin.z = pos.z;
     const hit = world.castRay(ray, STEP_HEIGHT, true);
     const groundDelta = desiredGroundCenter - pos.y;
     const grounded = (!!hit && hit.timeOfImpact < STEP_HEIGHT) || (groundDelta <= STEP_HEIGHT && groundDelta > -0.18);
@@ -180,15 +199,30 @@ export default function Hero() {
       if (eyeR.current) eyeR.current.position.x = 0.055 + Math.sin(bobT.current * 0.37) * 0.006;
 
       if (hoodieMat.current) {
-        hoodieMat.current.color.set("#1f4d5d").lerp(new THREE.Color("#132e38"), wet).lerp(new THREE.Color("#3d4a44"), dust * 0.3);
+        hoodieMat.current.color.copy(C_HOODIE).lerp(C_HOODIE_WET, wet).lerp(C_HOODIE_DUST, dust * 0.3);
         hoodieMat.current.roughness = 0.82 - wet * 0.22;
       }
-      if (pantsMat.current) pantsMat.current.color.set("#1d2633").lerp(new THREE.Color("#121821"), wet).lerp(new THREE.Color("#4a443a"), dust * 0.35);
+      if (pantsMat.current) pantsMat.current.color.copy(C_PANTS).lerp(C_PANTS_WET, wet).lerp(C_PANTS_DUST, dust * 0.35);
       if (skinMat.current) {
         skinMat.current.roughness = 0.66 - wet * 0.16;
-        skinMat.current.color.set("#c98f68").lerp(new THREE.Color("#b98263"), wet * 0.35);
+        skinMat.current.color.copy(C_SKIN).lerp(C_SKIN_WET, wet * 0.35);
       }
-      if (hairMat.current) hairMat.current.color.set("#17110d").lerp(new THREE.Color("#090706"), wet * 0.8);
+      if (hairMat.current) hairMat.current.color.copy(C_HAIR).lerp(C_HAIR_WET, wet * 0.8);
+    }
+
+    // Higgs-field boundary: hold the hero inside the rim + ripple feedback
+    if (onFoot) {
+      const rC = Math.hypot(pos.x, pos.z);
+      if (rC > MAX_R) {
+        const ux = pos.x / rC;
+        const uz = pos.z / rC;
+        rb.setTranslation({ x: ux * MAX_R, y: pos.y, z: uz * MAX_R }, true);
+        const vRad = vel.x * ux + vel.z * uz;
+        if (vRad > 0) rb.setLinvel({ x: vel.x - ux * vRad, y: vel.y, z: vel.z - uz * vRad }, true);
+        tracker.field.impact = Math.min(1, tracker.field.impact + 0.25);
+        tracker.field.x = ux * MAX_R;
+        tracker.field.z = uz * MAX_R;
+      }
     }
 
     // publish to trackers

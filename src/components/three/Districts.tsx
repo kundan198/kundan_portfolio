@@ -48,7 +48,7 @@ function DistrictNode({ d }: { d: District }) {
 
   const crystal = useRef<THREE.Mesh>(null);
   const ring = useRef<THREE.Mesh>(null);
-  const light = useRef<THREE.PointLight>(null);
+  const crystalMat = useRef<THREE.MeshStandardMaterial>(null);
 
   // scatter orbs around the district
   const orbPositions = useMemo(() => {
@@ -73,7 +73,9 @@ function DistrictNode({ d }: { d: District }) {
       crystal.current.position.y = 4.2 + Math.sin(t * 1.4 + cx) * 0.16;
     }
     if (ring.current) ring.current.rotation.z = t * 0.3;
-    if (light.current) light.current.intensity = 0.75 + alive * 2.5 + Math.sin(t * 2) * 0.22;
+    // the crystal itself pulses brighter as the district comes alive (no point
+    // light — dozens of dynamic lights were the main GPU cost of the scene)
+    if (crystalMat.current) crystalMat.current.emissiveIntensity = 0.95 + alive * 1.6 + Math.sin(t * 2) * 0.18;
   });
 
   return (
@@ -96,9 +98,8 @@ function DistrictNode({ d }: { d: District }) {
       </mesh>
       <mesh ref={crystal} position={[0, 4.2, 0]}>
         <octahedronGeometry args={[0.45, 0]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.95} metalness={0.25} roughness={0.18} transparent opacity={0.78} />
+        <meshStandardMaterial ref={crystalMat} color={color} emissive={color} emissiveIntensity={0.95} metalness={0.25} roughness={0.18} transparent opacity={0.78} />
       </mesh>
-      <pointLight ref={light} position={[0, 3.8, 0]} color={color} distance={10} intensity={0.65} />
 
       {/* floating label */}
       <Text position={[0, 6.0, 0]} fontSize={0.5} color={d.color} anchorX="center" anchorY="middle" outlineWidth={0.02} outlineColor="#000">

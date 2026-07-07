@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { useFrame } from "@react-three/fiber";
@@ -10,6 +10,7 @@ import { terrainHeight, roadFlatten } from "@/lib/noise";
 import { distanceToRoad } from "@/lib/roads";
 import { useGame } from "@/lib/store";
 import { makeGlassMaterial, makeNeonMaterial, updateCityMaterials } from "@/lib/buildingMaterials";
+import { registerOccluders, type Occluder } from "@/lib/occluders";
 
 /* -------------------------------------------------------------------------- */
 /*  Premium glass-tower skyline.                                              */
@@ -93,6 +94,7 @@ type Built = {
   neon: THREE.BufferGeometry;
   signs: { x: number; y: number; z: number; rot: number; text: string }[];
   base: number;
+  occluders: Occluder[];
 };
 
 function buildDistrict(id: string, cx: number, cz: number, tier: CityTier, sign?: string): Built {
@@ -105,11 +107,21 @@ function buildDistrict(id: string, cx: number, cz: number, tier: CityTier, sign?
 
   const towers = layout(id, cx, cz, tier);
   let tallest: Tower | null = null;
+  const occluders: Occluder[] = [];
 
   for (const t of towers) {
     const lx = t.x - cx;
     const lz = t.z - cz;
     const foot = terrainHeight(t.x, t.z) - base; // sit on the terrain
+
+    // camera occluder (generous) + solid footprint for the car (tight)
+    occluders.push({
+      x: t.x,
+      z: t.z,
+      r: Math.max(t.w, t.d) * 0.72 + 0.5,
+      rc: Math.max(t.w, t.d) * 0.55 + 0.25,
+      top: base + foot + 1.6 + t.h,
+    });
 
     // ---- podium (ground floor, concrete) ----
     trim.push(box(t.w + 0.9, 1.6, t.d + 0.9, lx, foot + 0.8, lz, t.rot));
@@ -176,7 +188,7 @@ function buildDistrict(id: string, cx: number, cz: number, tier: CityTier, sign?
 
   const merge = (arr: THREE.BufferGeometry[]) =>
     arr.length ? mergeGeometries(arr, false)! : new THREE.BufferGeometry();
-  const built = { glass: merge(glass), trim: merge(trim), neon: merge(neon), signs, base };
+  const built = { glass: merge(glass), trim: merge(trim), neon: merge(neon), signs, base, occluders };
   [...glass, ...trim, ...neon].forEach((g) => g.dispose());
   return built;
 }
@@ -187,6 +199,7 @@ function DistrictTowers({ id, cx, cz, tier, sign, glassMat, trimMat, neonMat }: 
 }) {
   const built = useMemo(() => buildDistrict(id, cx, cz, tier, sign), [id, cx, cz, tier, sign]);
   const color = useMemo(() => districts.find((d) => d.id === id)?.color ?? "#8ab4ff", [id]);
+  useEffect(() => registerOccluders(built.occluders), [built]);
   return (
     <group position={[cx, built.base, cz]}>
       <mesh geometry={built.glass} material={glassMat} castShadow receiveShadow />

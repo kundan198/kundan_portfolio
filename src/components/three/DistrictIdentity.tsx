@@ -119,7 +119,7 @@ function HomeDistrict({ cx, cz }: { cx: number; cz: number }) {
       {[-12, -9, -6, 8].map((x, i) => (
         <group key={x} position={[cx + x, yAt(cx + x, cz + 7 + i), cz + 7 + i]}>
           <mesh castShadow position={[0, 0.9, 0]}><cylinderGeometry args={[0.08, 0.11, 1.8, 8]} /><meshStandardMaterial color="#33251b" /></mesh>
-          <pointLight position={[0, 1.55, 0]} color="#ffd6a0" intensity={0.45} distance={7} />
+          <mesh position={[0, 1.72, 0]}><sphereGeometry args={[0.13, 8, 6]} /><meshStandardMaterial color="#ffe9c4" emissive="#ffd6a0" emissiveIntensity={1.6} /></mesh>
         </group>
       ))}
     </group>
@@ -234,7 +234,7 @@ function DowntownDistrict({ cx, cz }: { cx: number; cz: number }) {
           <cylinderGeometry args={[1.1, 1.35, 0.72, 32]} />
           <meshStandardMaterial color="#94a3b8" metalness={0.18} roughness={0.48} />
         </mesh>
-        <pointLight position={[0, 2.2, 0]} color="#38bdf8" intensity={0.8} distance={16} />
+        <mesh position={[0, 0.8, 0]}><sphereGeometry args={[0.28, 10, 8]} /><meshStandardMaterial color="#bae6fd" emissive="#38bdf8" emissiveIntensity={1.8} /></mesh>
       </group>
     </group>
   );
@@ -295,7 +295,9 @@ function ForestDistrict({ cx, cz }: { cx: number; cz: number }) {
         if (blocksRoad(x, z, 3.4)) return null;
         return <Box key={i} pos={[x, yAt(x, z, 0.1), z]} size={[0.75, 0.12, 0.55]} color="#9ca3af" roughness={0.96} />;
       })}
-      {[-4, 0, 4].map((x) => <pointLight key={x} position={[cx + x, base + 1.4, cz + 8]} color="#86efac" intensity={0.35} distance={7} />)}
+      {[-4, 0, 4].map((x) => (
+        <mesh key={x} position={[cx + x, base + 1.4, cz + 8]}><sphereGeometry args={[0.12, 8, 6]} /><meshStandardMaterial color="#d1fae5" emissive="#86efac" emissiveIntensity={1.5} /></mesh>
+      ))}
     </group>
   );
 }
@@ -331,7 +333,6 @@ function SpaceDistrict({ cx, cz }: { cx: number; cz: number }) {
         <Box pos={[0, 1.4, 0]} size={[8, 2.8, 4.0]} color="#94a3b8" metalness={0.22} roughness={0.48} />
         <Box pos={[0, 3.0, 0]} size={[8.8, 0.28, 4.5]} color="#e2e8f0" />
       </PlacedGroup>
-      <pointLight position={[cx, base + 12, cz]} color="#c7d2fe" intensity={1.1} distance={28} />
     </group>
   );
 }

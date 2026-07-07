@@ -57,7 +57,6 @@ function GableRoof({ w, d, h, y, mat }: { w: number; d: number; h: number; y: nu
 export default function HomeDistrict() {
   const winRef = useRef<THREE.MeshStandardMaterial[]>([]);
   const lampRef = useRef<THREE.MeshStandardMaterial[]>([]);
-  const lampLight = useRef<THREE.PointLight[]>([]);
 
   const home = districts.find((d) => d.id === "home")!;
   const [hx, hz] = home.position;
@@ -92,8 +91,7 @@ export default function HomeDistrict() {
     const elev = Math.sin(tod * Math.PI * 2 - Math.PI / 2);
     const night = THREE.MathUtils.clamp(0.5 - elev * 2.2, 0, 1);
     winRef.current.forEach((m) => m && (m.emissiveIntensity = 0.15 + night * 1.5));
-    lampRef.current.forEach((m) => m && (m.emissiveIntensity = night * 3));
-    lampLight.current.forEach((l) => l && (l.intensity = night * 4));
+    lampRef.current.forEach((m) => m && (m.emissiveIntensity = night * 4));
   });
 
   const Window = ({ pos, w = 1.1, h = 1.3, idx }: { pos: [number, number, number]; w?: number; h?: number; idx: number }) => (
@@ -263,7 +261,6 @@ export default function HomeDistrict() {
               emissiveIntensity={0}
             />
           </mesh>
-          <pointLight ref={(l) => { if (l) lampLight.current[i] = l; }} position={[0, 2.3, 0]} color="#ffe6ab" distance={12} decay={2} intensity={0} />
         </group>
       ))}
     </group>
