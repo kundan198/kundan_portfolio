@@ -30,16 +30,19 @@ import Link from "next/link";
 import { experience } from "@/lib/data";
 
 /* ─── Route config ─────────────────────────────────────────── */
-const VH    = 180;
-const SCALE = 1.72;
+const VH    = 260;
+const SCALE = 2.9;
 const PATH  =
-  "M 50 8 C 72 22, 73 40, 52 55 C 30 72, 31 92, 54 110 C 76 128, 70 154, 50 172";
+  "M 50 6 C 84 26, 86 52, 52 70 C 18 88, 16 114, 50 132 " +
+  "C 84 150, 86 176, 52 194 C 22 210, 20 236, 50 254";
 
+/* Marker coordinates are read off the path at runtime (see stopPts), so the
+   route can be reshaped without hand-placing every stop. */
 const STOPS = [
-  { x: 68, y: 34,  trigger: 0,    label: "Research",   accent: "#a78bfa" },
-  { x: 40, y: 68,  trigger: 0.30, label: "Healthcare", accent: "#38bdf8" },
-  { x: 41, y: 96,  trigger: 0.58, label: "FinTech",    accent: "#fbbf24" },
-  { x: 50, y: 164, trigger: 0.84, label: "Hire Me",    accent: "#34d399" },
+  { trigger: 0,    label: "Research",   accent: "#a78bfa" },
+  { trigger: 0.29, label: "Healthcare", accent: "#38bdf8" },
+  { trigger: 0.57, label: "FinTech",    accent: "#fbbf24" },
+  { trigger: 0.85, label: "Hire Me",    accent: "#34d399" },
 ];
 
 const SWIPE_DISTANCE    = 58;
@@ -358,6 +361,7 @@ export default function Experience() {
 
   const [activeIdx, setActiveIdx] = useState(0);
   const [pathLen,   setPathLen]   = useState(1);
+  const [stopPts,   setStopPts]   = useState<{ x: number; y: number }[]>([]);
   const [percent,   setPercent]   = useState(0);
   const [vpH,       setVpH]       = useState(720);
 
@@ -433,6 +437,12 @@ export default function Experience() {
         const len = pathRef.current.getTotalLength();
         pathLenRef.current = len;
         setPathLen(len);
+        setStopPts(
+          STOPS.map((st) => {
+            const pt = pathRef.current!.getPointAtLength(st.trigger * len);
+            return { x: pt.x, y: pt.y };
+          }),
+        );
         strokeOff.set(len);
         updateRoute(progressRef.current, h);
       }
@@ -572,29 +582,46 @@ export default function Experience() {
                 <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
             </defs>
-            <path d={PATH} stroke="rgba(255,255,255,0.05)" strokeWidth="20"  fill="none" strokeLinecap="round" />
-            <path d={PATH} stroke="rgba(6,8,20,0.97)"      strokeWidth="13"  fill="none" strokeLinecap="round" />
-            <path d={PATH} stroke="rgba(255,255,255,0.09)" strokeWidth="0.9" fill="none" strokeDasharray="2 5" strokeLinecap="round" />
+            <path id="xpRoutePath" d={PATH} stroke="rgba(255,255,255,0.075)" strokeWidth="17" fill="none" strokeLinecap="round" />
+            <path d={PATH} stroke="rgba(6,8,20,0.97)"      strokeWidth="11"  fill="none" strokeLinecap="round" />
+            <path d={PATH} stroke="rgba(255,255,255,0.17)" strokeWidth="1" fill="none" strokeDasharray="2 5" strokeLinecap="round" />
+            {/* lane markings drifting along the asphalt */}
+            <path d={PATH} stroke="rgba(255,255,255,0.34)" strokeWidth="0.8" fill="none" strokeDasharray="1.4 7" strokeLinecap="round">
+              <animate attributeName="stroke-dashoffset" from="0" to="-8.4" dur="1.1s" repeatCount="indefinite" />
+            </path>
             <motion.path
               ref={pathRef}
               d={PATH}
               stroke="url(#xpRouteGrad)"
-              strokeWidth="3.5"
+              strokeWidth="3"
               fill="none"
               strokeLinecap="round"
               strokeDasharray={pathLen}
               style={{ strokeDashoffset: strokeOff, filter: "url(#xpGlow)" }}
             />
-            {STOPS.map((s, i) => (
-              <g key={s.label}>
-                <circle cx={s.x} cy={s.y} r="7.5" fill="none" stroke={s.accent} opacity="0.18" />
-                <circle cx={s.x} cy={s.y} r="3.5" fill={s.accent} opacity="0.95" />
-                <circle cx={s.x} cy={s.y} r="11" fill="none" stroke={s.accent} opacity="0.28">
-                  <animate attributeName="r"       values="6;14;6"      dur="2.6s" begin={`${i * 0.8}s`} repeatCount="indefinite" />
-                  <animate attributeName="opacity" values="0.32;0;0.32" dur="2.6s" begin={`${i * 0.8}s`} repeatCount="indefinite" />
-                </circle>
-              </g>
+            {/* sparks running the full route */}
+            {[0, 1, 2].map((i) => (
+              <circle key={`spark-${i}`} r="1.5" fill="#e2e8f0" opacity="0.75" filter="url(#xpGlow)">
+                <animateMotion dur="7s" begin={`${i * 2.33}s`} repeatCount="indefinite" rotate="auto">
+                  <mpath href="#xpRoutePath" />
+                </animateMotion>
+                <animate attributeName="opacity" values="0;0.85;0.85;0" dur="7s" begin={`${i * 2.33}s`} repeatCount="indefinite" />
+              </circle>
             ))}
+            {stopPts.map((pt, i) => {
+              const stop = STOPS[i];
+              const reached = i <= activeIdx;
+              return (
+                <g key={stop.label}>
+                  <circle cx={pt.x} cy={pt.y} r="7.5" fill="none" stroke={stop.accent} opacity="0.18" />
+                  <circle cx={pt.x} cy={pt.y} r="3.5" fill={stop.accent} opacity={reached ? 0.95 : 0.45} />
+                  <circle cx={pt.x} cy={pt.y} r="11" fill="none" stroke={stop.accent} opacity="0.28">
+                    <animate attributeName="r"       values="6;14;6"      dur="2.6s" begin={`${i * 0.8}s`} repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.32;0;0.32" dur="2.6s" begin={`${i * 0.8}s`} repeatCount="indefinite" />
+                  </circle>
+                </g>
+              );
+            })}
           </svg>
         </motion.div>
 
@@ -603,14 +630,78 @@ export default function Experience() {
           className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
           style={{ rotate: navRotate }}
         >
-          <div className="relative grid h-[72px] w-[72px] place-items-center">
+          <div className="relative grid h-[116px] w-[116px] place-items-center">
+            {/* radar sweep */}
             <motion.div
               className="absolute inset-0 rounded-full"
-              style={{ border: `1px solid ${current.accent}44` }}
-              animate={{ scale: [0.78, 1.32, 0.78], opacity: [0.5, 0.03, 0.5] }}
-              transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
+              style={{
+                background: `conic-gradient(from 0deg, transparent 0deg, transparent 262deg, ${current.accent}42 332deg, ${current.accent}9c 356deg, transparent 360deg)`,
+                maskImage: "radial-gradient(circle, #000 32%, transparent 72%)",
+                WebkitMaskImage: "radial-gradient(circle, #000 32%, transparent 72%)",
+              }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
             />
-            <Navigation size={38} strokeWidth={1.8} style={{ color: current.accent, fill: `${current.accent}22`, filter: `drop-shadow(0 6px 20px ${current.accent}55)` }} />
+
+            {/* staggered sonar echoes */}
+            {[0, 1].map((i) => (
+              <motion.div
+                key={i}
+                className="absolute inset-0 rounded-full"
+                style={{ border: `1px solid ${current.accent}55` }}
+                animate={{ scale: [0.42, 1.15], opacity: [0.65, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut", delay: i * 1.2 }}
+              />
+            ))}
+
+            {/* counter-rotating dashed bezel */}
+            <motion.svg
+              viewBox="0 0 100 100"
+              className="absolute inset-0 h-full w-full"
+              animate={{ rotate: -360 }}
+              transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
+            >
+              <circle cx="50" cy="50" r="41" fill="none" stroke={current.accent} strokeOpacity="0.4" strokeWidth="1" strokeDasharray="2.5 7" />
+              {[0, 90, 180, 270].map((deg) => (
+                <rect key={deg} x="49.4" y="4" width="1.2" height="6" rx="0.6" fill={current.accent} opacity="0.6" transform={`rotate(${deg} 50 50)`} />
+              ))}
+            </motion.svg>
+
+            {/* heading cone */}
+            <div
+              className="absolute left-1/2 top-[3px] h-[34px] w-[34px] -translate-x-1/2"
+              style={{
+                background: `linear-gradient(to bottom, ${current.accent}3d, transparent 78%)`,
+                clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)",
+              }}
+            />
+
+            {/* dark disc so the arrow stays legible over the bright road */}
+            <div
+              className="absolute h-[52px] w-[52px] rounded-full"
+              style={{
+                background: "radial-gradient(circle, rgba(3,5,14,0.95) 0%, rgba(3,5,14,0.72) 62%, transparent 100%)",
+                border: `1px solid ${current.accent}66`,
+                boxShadow: `0 0 26px ${current.accent}3a, inset 0 0 18px ${current.accent}1f`,
+              }}
+            />
+
+            {/* core arrow — breathes and bobs forward */}
+            <motion.div
+              className="relative"
+              animate={{ scale: [1, 1.1, 1], y: [1.5, -2.5, 1.5] }}
+              transition={{ duration: 2.1, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Navigation
+                size={34}
+                strokeWidth={2.2}
+                style={{
+                  color: "#ffffff",
+                  fill: current.accent,
+                  filter: `drop-shadow(0 0 10px ${current.accent}) drop-shadow(0 4px 22px ${current.accent}aa)`,
+                }}
+              />
+            </motion.div>
           </div>
         </motion.div>
 
