@@ -84,7 +84,26 @@ npm run build    # production build
 npm run start    # serve the build
 ```
 
-Deploy to **Vercel** (zero-config for Next.js): push to GitHub and import the repo.
+### Deploy to Vercel
+
+The repo ships a `vercel.json` (framework `nextjs`, `npm ci` install, `iad1` region), so it is
+import-and-go:
+
+1. **Dashboard:** https://vercel.com/new → import `kundan198/kundan_portfolio` → Deploy.
+   Framework, build (`next build`) and output are picked up from `vercel.json`.
+2. **CLI:** `npm i -g vercel && vercel login && vercel --prod` from the repo root.
+
+Environment variables (Project → Settings → Environment Variables) — all optional, see
+`.env.example`:
+
+| Variable | Used by | Notes |
+| --- | --- | --- |
+| `RESEND_API_KEY` | `/api/contact` | Without it the contact form validates but sends no mail. |
+| `CONTACT_TO_EMAIL` | `/api/contact` | Defaults to the profile email. |
+| `RESEND_FROM_EMAIL` | `/api/contact` | Defaults to Resend's onboarding sender. |
+| `OLLAMA_HOST` / `OLLAMA_MODEL` | `/api/character`, `/api/models` | Must be a publicly reachable Ollama host; the `127.0.0.1` default does not exist on Vercel. |
+
+Pushes to `main` publish to production; every other branch gets a preview deployment.
 
 ## 🛣 Roadmap (honest next steps)
 
