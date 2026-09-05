@@ -2,8 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 
 export default function CustomCursor() {
-  const dotRef = useRef<HTMLDivElement>(null);
+  const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
+  const haloRef = useRef<HTMLDivElement>(null);
   const [isCoarse, setIsCoarse] = useState(false);
 
   useEffect(() => {
@@ -11,14 +12,17 @@ export default function CustomCursor() {
     setIsCoarse(coarse);
     if (coarse) return;
 
-    const dot = dotRef.current;
+    const dot  = dotRef.current;
     const ring = ringRef.current;
-    if (!dot || !ring) return;
+    const halo = haloRef.current;
+    if (!dot || !ring || !halo) return;
 
     let mx = -999;
     let my = -999;
     let ringX = -999;
     let ringY = -999;
+    let haloX = -999;
+    let haloY = -999;
     let rafId: number;
     let hovering = false;
     let visible = false;
@@ -28,6 +32,7 @@ export default function CustomCursor() {
       visible = next;
       dot.classList.toggle("visible", next);
       ring.classList.toggle("visible", next);
+      halo.classList.toggle("visible", next);
     };
 
     const setInteractive = (next: boolean) => {
@@ -35,6 +40,7 @@ export default function CustomCursor() {
       hovering = next;
       dot.classList.toggle("hover", next);
       ring.classList.toggle("hover", next);
+      halo.classList.toggle("hover", next);
     };
 
     const onMove = (e: MouseEvent) => {
@@ -52,11 +58,15 @@ export default function CustomCursor() {
       ringX += (mx - ringX) * 0.35;
       ringY += (my - ringY) * 0.35;
       ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
+      // halo drifts further behind, so quick movements leave a soft comet trail
+      haloX += (mx - haloX) * 0.11;
+      haloY += (my - haloY) * 0.11;
+      halo.style.transform = `translate3d(${haloX}px, ${haloY}px, 0)`;
       rafId = requestAnimationFrame(tick);
     };
 
-    const onDown = () => { dot.classList.add("clicking"); ring.classList.add("clicking"); };
-    const onUp = () => { dot.classList.remove("clicking"); ring.classList.remove("clicking"); };
+    const onDown = () => { dot.classList.add("clicking"); ring.classList.add("clicking"); halo.classList.add("clicking"); };
+    const onUp = () => { dot.classList.remove("clicking"); ring.classList.remove("clicking"); halo.classList.remove("clicking"); };
     const onLeave = () => setVisible(false);
     const onEnter = () => setVisible(true);
 
@@ -81,6 +91,7 @@ export default function CustomCursor() {
 
   return (
     <>
+      <div ref={haloRef} className="cursor-halo" />
       <div ref={dotRef} className="cursor" />
       <div ref={ringRef} className="cursor-ring" />
     </>

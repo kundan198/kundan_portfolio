@@ -23,7 +23,6 @@ import {
   ExternalLink,
   Mail,
   MapPin,
-  Navigation,
   Radar,
 } from "lucide-react";
 import Link from "next/link";
@@ -44,6 +43,8 @@ const STOPS = [
   { trigger: 0.57, label: "FinTech",    accent: "#fbbf24" },
   { trigger: 0.85, label: "Hire Me",    accent: "#34d399" },
 ];
+
+const NAV_SIZE = 132;
 
 const SWIPE_DISTANCE    = 58;
 const SWIPE_AXIS_RATIO  = 1.2;
@@ -356,6 +357,8 @@ export default function Experience() {
   const progress  = useMotionValue(0);
   const routeY    = useMotionValue(0);
   const navRotate = useMotionValue(0);
+  const navX      = useMotionValue(0);
+  const navY      = useMotionValue(0);
   const strokeOff = useMotionValue(1);
   const spring    = useSpring(progress, { stiffness: 78, damping: 23, mass: 0.65 });
 
@@ -388,15 +391,21 @@ export default function Experience() {
       const d   = clamp(p * len, 0, len - 0.01);
       const pt  = path.getPointAtLength(d);
       const fwd = path.getPointAtLength(Math.min(len, d + 2));
+      const w   = containerRef.current?.clientWidth ?? window.innerWidth;
       routeY.set(h / 2 - (pt.y / VH) * rH);
-      navRotate.set(Math.atan2(fwd.x - pt.x, fwd.y - pt.y) * (180 / Math.PI));
+      /* The route only scrolls vertically, so the car has to track the path's
+         own x to stay on the asphalt. */
+      navX.set((pt.x / 100) * w - NAV_SIZE / 2);
+      navY.set(h / 2 - NAV_SIZE / 2);
+      /* 0deg = travelling straight up, matching the nose-up car sprite. */
+      navRotate.set(Math.atan2(fwd.x - pt.x, -(fwd.y - pt.y)) * (180 / Math.PI));
       strokeOff.set(len * (1 - p));
       const np = Math.round(p * 100);
       setPercent((prev) => (prev === np ? prev : np));
       const ni = getIdx(p);
       setActiveIdx((prev) => (prev === ni ? prev : ni));
     },
-    [navRotate, routeY, strokeOff, vpH],
+    [navRotate, navX, navY, routeY, strokeOff, vpH],
   );
 
   const setJourney = useCallback(
@@ -573,9 +582,13 @@ export default function Experience() {
           <svg viewBox={`0 0 100 ${VH}`} preserveAspectRatio="none" className="h-full w-full">
             <defs>
               <linearGradient id="xpRouteGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"   stopColor="#a78bfa" />
-                <stop offset="50%"  stopColor="#38bdf8" />
-                <stop offset="100%" stopColor="#34d399" />
+                {STOPS.map((st, i) => (
+                  <stop
+                    key={st.label}
+                    offset={`${(i / (STOPS.length - 1)) * 100}%`}
+                    stopColor={st.accent}
+                  />
+                ))}
               </linearGradient>
               <filter id="xpGlow">
                 <feGaussianBlur stdDeviation="2.2" result="b" />
@@ -589,6 +602,8 @@ export default function Experience() {
             <path d={PATH} stroke="rgba(255,255,255,0.34)" strokeWidth="0.8" fill="none" strokeDasharray="1.4 7" strokeLinecap="round">
               <animate attributeName="stroke-dashoffset" from="0" to="-8.4" dur="1.1s" repeatCount="indefinite" />
             </path>
+            {/* dim preview of the whole route, so the road ahead still reads */}
+            <path d={PATH} stroke="url(#xpRouteGrad)" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.17" />
             <motion.path
               ref={pathRef}
               d={PATH}
@@ -625,84 +640,75 @@ export default function Experience() {
           </svg>
         </motion.div>
 
-        {/* Navigator arrow */}
+        {/* Car riding the route */}
         <motion.div
-          className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
-          style={{ rotate: navRotate }}
+          className="pointer-events-none absolute left-0 top-0 z-20"
+          style={{ x: navX, y: navY, width: NAV_SIZE, height: NAV_SIZE }}
         >
-          <div className="relative grid h-[116px] w-[116px] place-items-center">
-            {/* radar sweep */}
-            <motion.div
-              className="absolute inset-0 rounded-full"
+          <motion.div className="relative grid h-full w-full place-items-center" style={{ rotate: navRotate }}>
+            {/* headlight wash thrown down the road ahead */}
+            <div
+              className="absolute left-1/2 top-[6px] h-[62px] w-[70px] -translate-x-1/2"
               style={{
-                background: `conic-gradient(from 0deg, transparent 0deg, transparent 262deg, ${current.accent}42 332deg, ${current.accent}9c 356deg, transparent 360deg)`,
-                maskImage: "radial-gradient(circle, #000 32%, transparent 72%)",
-                WebkitMaskImage: "radial-gradient(circle, #000 32%, transparent 72%)",
+                background: `linear-gradient(to bottom, ${current.accent}55, ${current.accent}18 45%, transparent 82%)`,
+                clipPath: "polygon(38% 0%, 62% 0%, 100% 100%, 0% 100%)",
+                filter: "blur(3px)",
               }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
             />
 
-            {/* staggered sonar echoes */}
+            {/* ground glow under the chassis */}
+            <div
+              className="absolute h-[74px] w-[74px] rounded-full"
+              style={{ background: `radial-gradient(circle, ${current.accent}40 0%, transparent 68%)` }}
+            />
+
+            {/* tyre smoke / speed rings trailing behind */}
             {[0, 1].map((i) => (
               <motion.div
                 key={i}
-                className="absolute inset-0 rounded-full"
-                style={{ border: `1px solid ${current.accent}55` }}
-                animate={{ scale: [0.42, 1.15], opacity: [0.65, 0] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut", delay: i * 1.2 }}
+                className="absolute h-[46px] w-[46px] rounded-full"
+                style={{ border: `1px solid ${current.accent}50` }}
+                animate={{ scale: [0.5, 1.5], opacity: [0.55, 0], y: [14, 40] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut", delay: i * 0.75 }}
               />
             ))}
 
-            {/* counter-rotating dashed bezel */}
+            {/* the car — nose up, so rotation 0 means driving straight up */}
             <motion.svg
-              viewBox="0 0 100 100"
-              className="absolute inset-0 h-full w-full"
-              animate={{ rotate: -360 }}
-              transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
-            >
-              <circle cx="50" cy="50" r="41" fill="none" stroke={current.accent} strokeOpacity="0.4" strokeWidth="1" strokeDasharray="2.5 7" />
-              {[0, 90, 180, 270].map((deg) => (
-                <rect key={deg} x="49.4" y="4" width="1.2" height="6" rx="0.6" fill={current.accent} opacity="0.6" transform={`rotate(${deg} 50 50)`} />
-              ))}
-            </motion.svg>
-
-            {/* heading cone */}
-            <div
-              className="absolute left-1/2 top-[3px] h-[34px] w-[34px] -translate-x-1/2"
-              style={{
-                background: `linear-gradient(to bottom, ${current.accent}3d, transparent 78%)`,
-                clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)",
-              }}
-            />
-
-            {/* dark disc so the arrow stays legible over the bright road */}
-            <div
-              className="absolute h-[52px] w-[52px] rounded-full"
-              style={{
-                background: "radial-gradient(circle, rgba(3,5,14,0.95) 0%, rgba(3,5,14,0.72) 62%, transparent 100%)",
-                border: `1px solid ${current.accent}66`,
-                boxShadow: `0 0 26px ${current.accent}3a, inset 0 0 18px ${current.accent}1f`,
-              }}
-            />
-
-            {/* core arrow — breathes and bobs forward */}
-            <motion.div
+              width="40"
+              height="66"
+              viewBox="0 0 40 66"
               className="relative"
-              animate={{ scale: [1, 1.1, 1], y: [1.5, -2.5, 1.5] }}
-              transition={{ duration: 2.1, repeat: Infinity, ease: "easeInOut" }}
+              animate={{ y: [0, -1.5, 0, 1.5, 0] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+              style={{ filter: `drop-shadow(0 0 12px ${current.accent}cc) drop-shadow(0 6px 18px rgba(0,0,0,0.75))` }}
             >
-              <Navigation
-                size={34}
-                strokeWidth={2.2}
-                style={{
-                  color: "#ffffff",
-                  fill: current.accent,
-                  filter: `drop-shadow(0 0 10px ${current.accent}) drop-shadow(0 4px 22px ${current.accent}aa)`,
-                }}
-              />
-            </motion.div>
-          </div>
+              <defs>
+                <linearGradient id="xpCarBody" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%"   stopColor="#0b1020" />
+                  <stop offset="42%"  stopColor={current.accent} />
+                  <stop offset="100%" stopColor="#0b1020" />
+                </linearGradient>
+              </defs>
+              {/* wheels */}
+              <rect x="1"  y="15" width="6" height="13" rx="2.6" fill="#05070f" />
+              <rect x="33" y="15" width="6" height="13" rx="2.6" fill="#05070f" />
+              <rect x="1"  y="41" width="6" height="13" rx="2.6" fill="#05070f" />
+              <rect x="33" y="41" width="6" height="13" rx="2.6" fill="#05070f" />
+              {/* chassis */}
+              <rect x="5" y="3" width="30" height="60" rx="12" fill="url(#xpCarBody)" stroke={current.accent} strokeWidth="1.2" />
+              {/* windscreen + roof */}
+              <path d="M11 20 Q20 14 29 20 L27 30 L13 30 Z" fill="#dbeafe" opacity="0.9" />
+              <rect x="11" y="33" width="18" height="15" rx="5" fill="#0b1020" opacity="0.75" />
+              <path d="M13 52 Q20 57 27 52 L26 47 L14 47 Z" fill="#bfdbfe" opacity="0.55" />
+              {/* headlights */}
+              <ellipse cx="13" cy="7"  rx="3" ry="2.2" fill="#ffffff" opacity="0.96" />
+              <ellipse cx="27" cy="7"  rx="3" ry="2.2" fill="#ffffff" opacity="0.96" />
+              {/* tail lights */}
+              <rect x="10" y="58" width="6" height="2.6" rx="1.3" fill="#f87171" opacity="0.92" />
+              <rect x="24" y="58" width="6" height="2.6" rx="1.3" fill="#f87171" opacity="0.92" />
+            </motion.svg>
+          </motion.div>
         </motion.div>
 
         {/* Experience card */}
