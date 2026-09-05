@@ -15,13 +15,19 @@ MS Computer Science, University of South Florida (Expected May 2026)
 BE Computer Science and Engineering, R.M.D Engineering College (CGPA 9.03/10, Gold Medal)
 
 CORE SKILLS
-Python, TypeScript, React, Flutter, FastAPI, Firebase, LangChain, RAG, PyTorch, TensorFlow, NLP, Computer Vision
+Python, Java, TypeScript, C#, React, Angular, Flutter, Spring Boot, ASP.NET Core, FastAPI,
+Azure (AI Services, OpenAI, Functions, Service Bus, SQL, DevOps), AWS (EC2, S3, RDS, Lambda),
+Firebase, LangChain, RAG, PyTorch, TensorFlow, Docker, CI/CD, NLP, Computer Vision
 
 EXPERIENCE HIGHLIGHTS
-- Research Software Engineer, SHIELD Lab, USF
-  Built and shipped CogniX, a production neuroscience app used in live studies.
-- AI Intern, YoungMinds
-  Built end-to-end NLP and predictive ML pipelines.
+- Graduate Research Assistant, University of South Florida SHIELD Lab (Oct 2025 - Present)
+  Built the Flutter neurocognitive assessment platform and its research-grade data capture pipeline.
+- Software Engineering Intern, Pfizer (Mar 2025 - Present)
+  Integrated Azure AI Services and Azure OpenAI to automate document classification, improving
+  operational efficiency by 29%; built React front ends and Java Spring Boot microservices on Azure.
+- Full Stack Engineer, PNC Financial (Jan 2023 - Jul 2024)
+  Delivered React and ASP.NET Core banking applications on AWS, lifting user engagement by 20%
+  and database execution efficiency by 25%.
 
 SELECTED PROJECTS
 - BayShield: Agentic AI disaster-response platform with parallel autonomous agents.
