@@ -36,9 +36,10 @@ const PATH  =
   "M 50 8 C 72 22, 73 40, 52 55 C 30 72, 31 92, 54 110 C 76 128, 70 154, 50 172";
 
 const STOPS = [
-  { x: 68, y: 34,  trigger: 0,    label: "Research", accent: "#a78bfa" },
-  { x: 35, y: 88,  trigger: 0.46, label: "Industry", accent: "#38bdf8" },
-  { x: 50, y: 164, trigger: 0.82, label: "Hire Me",  accent: "#34d399" },
+  { x: 68, y: 34,  trigger: 0,    label: "Research",   accent: "#a78bfa" },
+  { x: 40, y: 68,  trigger: 0.30, label: "Healthcare", accent: "#38bdf8" },
+  { x: 41, y: 96,  trigger: 0.58, label: "FinTech",    accent: "#fbbf24" },
+  { x: 50, y: 164, trigger: 0.84, label: "Hire Me",    accent: "#34d399" },
 ];
 
 const SWIPE_DISTANCE    = 58;
@@ -56,16 +57,17 @@ interface Milestone {
   bullets:  readonly string[];
 }
 
+const DESTINATION_IDX = experience.length;
+
 const MILESTONES: Milestone[] = [
-  { ...experience[0], accent: STOPS[0].accent, signal: "Live neuroscience systems" },
-  { ...experience[1], accent: STOPS[1].accent, signal: "Production ML pipelines"   },
+  ...experience.map((e, i) => ({ ...e, accent: STOPS[i].accent })),
   {
     role:     "Open to Opportunities",
     org:      "Full Stack SWE · AI / ML Engineering",
     location: "Tampa, FL · Open to Relocation",
     period:   "May 2026",
     type:     "Destination",
-    accent:   STOPS[2].accent,
+    accent:   STOPS[DESTINATION_IDX].accent,
     signal:   "Ready for the next build",
     bullets: [
       "Seeking high-impact roles across full-stack systems, applied AI, and research software.",
@@ -79,8 +81,9 @@ function clamp(v: number, lo = 0, hi = 1) {
   return Math.min(hi, Math.max(lo, v));
 }
 function getIdx(p: number) {
-  if (p >= STOPS[2].trigger) return 2;
-  if (p >= STOPS[1].trigger) return 1;
+  for (let i = STOPS.length - 1; i > 0; i--) {
+    if (p >= STOPS[i].trigger) return i;
+  }
   return 0;
 }
 
@@ -636,7 +639,7 @@ export default function Experience() {
                 <div className="mt-2.5 flex w-fit items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-semibold text-white/50">
                   <Radar size={10} style={{ color: current.accent }} />{current.signal}
                 </div>
-                {activeIdx === 2 && (
+                {activeIdx === DESTINATION_IDX && (
                   <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="mt-3 flex flex-wrap gap-2">
                     <a href="https://www.linkedin.com/in/kundan-srinivas-sakkuru-513532200/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold text-black transition-opacity hover:opacity-85" style={{ background: current.accent }}>
                       <ExternalLink size={11} />LinkedIn

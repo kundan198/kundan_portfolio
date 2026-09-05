@@ -20,6 +20,7 @@ type CharState =
 /* ─── Ollama ─────────────────────────────────────────────────────────────── */
 const SYSTEM = `You are Kai, an enthusiastic AI guide on Kundan Srinivas Sakkuru's portfolio.
 Kundan: MS CS @ USF (May 2026), Full Stack + AI Engineer, Tampa FL.
+Experience: Software Engineering Intern @ Pfizer (Azure AI/OpenAI, Java Spring Boot, React), Full Stack Engineer @ PNC Financial (React, ASP.NET Core, AWS), Graduate Research Assistant @ USF SHIELD Lab (Flutter neurocognitive platform).
 Projects: BayShield (2× hackathon winner), SignBridge (ASL AI), CogniX (neuroscience mobile app).
 8 research papers (1 Scopus). Gold Medal, CGPA 9.03/10. Stack: React, Flutter, Python, FastAPI, LangChain, RAG, PyTorch, Firebase, GCP.
 Open to SWE/AI roles May 2026. Navigation: /about /projects /skills /research /experience /contact
@@ -109,7 +110,7 @@ function getResponse(trigger: KaiTrigger): KaiResponse {
     case "award":
       return { message: "🥇 Gold Medal recipient — best outgoing student 2020–2024! Also covered in Dinakaran & The Hindu!", state: "celebrating" };
     case "experience":
-      return { message: "💼 Research Assistant @ SHIELD Lab USF — engineering a production neuroscience app used in real studies!", state: "coding" };
+      return { message: "💼 Pfizer (Azure AI + healthcare), PNC Financial (banking platforms), and SHIELD Lab @ USF — research meets production!", state: "coding" };
     case "project":
       return {
         message: trigger.label === "BayShield"
@@ -200,7 +201,7 @@ function inferKaiTrigger(target: Element): KaiTrigger | null {
   if (label.toLowerCase().includes("skill") || /python|react|flutter|fastapi|firebase|langchain|pytorch|tensorflow|typescript/i.test(label)) {
     return { type: "skill", label };
   }
-  if (label.toLowerCase().includes("experience") || label.toLowerCase().includes("research software") || label.toLowerCase().includes("youngminds")) {
+  if (label.toLowerCase().includes("experience") || label.toLowerCase().includes("research software") || label.toLowerCase().includes("pfizer") || label.toLowerCase().includes("pnc")) {
     return { type: "experience", label };
   }
   if (label.toLowerCase().includes("research") || label.toLowerCase().includes("paper")) return { type: "research", label };
